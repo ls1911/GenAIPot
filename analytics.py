@@ -60,4 +60,14 @@ def generate_graphs(df):
     plt.xlabel('IP Address')
     plt.ylabel('Number of Connections')
     plt.savefig('top_ips.png')
-   
+    plt.show()
+
+    plt.figure(figsize=(10, 6))
+    connections_per_hour.plot(kind='line')
+    plt.title('Connections in the Last 24 Hours')
+    plt.xlabel('Hour')
+    plt.ylabel('Number of Connections')
+    plt.savefig('connections_last_24_hours.png')
+    plt.show()
+
+    print("Graphs have been generated and saved.")

@@ -26,8 +26,8 @@ class AIService:
 
     def generate_response(self, command):
         prompt = (
-            f"Generate a realistic and variable POP3 response for the command: {command}. "
-            "The response should adhere to the POP3 RFC standards."
+            f"Generate a realistic and variable response for the command: {command}. "
+            "The response should adhere to the appropriate protocol standards."
         )
 
         if self.use_azure:
