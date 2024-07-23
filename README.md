@@ -1,55 +1,49 @@
+
 # GenAIPot
 
 GenAIPot is a sophisticated honeypot that emulates a POP3 server. It uses various AI services to generate realistic responses to POP3 commands, logs all interactions to an SQLite database, and provides capabilities for anomaly detection and predictions using machine learning. It supports multiple AI services, including OpenAI, Azure OpenAI, and Google Vertex AI.
 
-## Features
+## [](#features)Features
 
-- Emulates a POP3 server using the Twisted networking framework.
-- Generates realistic POP3 responses using OpenAI, Azure OpenAI, or Google Vertex AI.
-- Logs all connections and commands to an SQLite database.
-- Provides anomaly detection and predictions using the Prophet library.
-- Generates graphical representations of the data.
+-   Emulates a POP3 server using the Twisted networking framework.
+-   Generates realistic POP3 responses using OpenAI, Azure OpenAI, or Google Vertex AI.
+-   Logs all connections and commands to an SQLite database.
+-   Provides anomaly detection and predictions using the Prophet library.
+-   Generates graphical representations of the data.
 
-## Installation
+## [](#installation)Installation
 
-### Prerequisites
+### [](#prerequisites)Prerequisites
 
 Ensure you have the following installed:
 
-- Python 3.7 or higher
-- pip
+-   Python 3.7 or higher
+-   pip
 
-### Install Required Libraries
+### [](#install-required-libraries)Install Required Libraries
 
-```bash
+```
 pip install openai azure-ai openai[azure] google-cloud-aiplatform python-dotenv pandas scikit-learn fbprophet email asyncio sqlite3 matplotlib twisted```
 
 ###Configuration
 Create a config.ini file in the project root with the following content:
 ```
-[openai]
-api_key = YOUR_OPENAI_API_KEY
 
-[azure]
-api_key = YOUR_AZURE_OPENAI_API_KEY
-endpoint = YOUR_AZURE_OPENAI_ENDPOINT
-deployment_name = YOUR_AZURE_OPENAI_DEPLOYMENT_NAME
+[openai] api_key = YOUR_OPENAI_API_KEY
 
-[gcp]
-project_id = YOUR_GCP_PROJECT_ID
-model_name = YOUR_GCP_MODEL_NAME
-```
+[azure] api_key = YOUR_AZURE_OPENAI_API_KEY endpoint = YOUR_AZURE_OPENAI_ENDPOINT deployment_name = YOUR_AZURE_OPENAI_DEPLOYMENT_NAME
+
+[gcp] project_id = YOUR_GCP_PROJECT_ID model_name = YOUR_GCP_MODEL_NAME
+
+
 Replace the placeholder values with your actual API keys and endpoints.
 
-##Usage
+# Usage
 
-###Running GenAIPot
-Start server:
-```
-python main.py
-```
+### Running GenAIPot
+Start server: python main.py
 
-###Command-Line Arguments
+### Command-Line Arguments
 
 
 	•	--predict: Perform prediction on collected data.
@@ -66,4 +60,4 @@ Acknowledgements
 	•	Google Vertex AI
 	•	Twisted
 	•	Prophet
-
+```
