@@ -1,5 +1,7 @@
 
 # GenAIPot
+🄶🄴🄽🄰🄸🄿🄾🅃
+G̲e̲n̲A̲I̲P̲o̲t̲
 
 GenAIPot is a sophisticated honeypot that emulates a POP3 server. It uses various AI services to generate realistic responses to POP3 commands, logs all interactions to an SQLite database, and provides capabilities for anomaly detection and predictions using machine learning. It supports multiple AI services, including OpenAI, Azure OpenAI, and Google Vertex AI.
 

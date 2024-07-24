@@ -5,6 +5,7 @@ import json
 import os
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -42,6 +43,10 @@ class AIService:
             # Extract the JSON part from within the text
             start = text.find('{')
             end = text.rfind('}') + 1
+            if start == -1 or end == 0:
+                logger.error("Invalid JSON structure detected.")
+                return {}
+
             json_text = text[start:end]
             responses = json.loads(json_text)
 
@@ -132,17 +137,16 @@ class AIService:
         try:
             start = text.find('{')
             end = text.rfind('}') + 1
+            if start == -1 or end == 0:
+                logger.error("Invalid JSON structure detected.")
+                return {}
+
             json_text = text[start:end]
             return json.loads(json_text)
         except json.JSONDecodeError as e:
             logger.error(f"Error parsing JSON response: {e}")
             logger.debug(f"Raw text for cleanup: {text}")
-            if start == -1 or end == 0:
-                logger.error("Invalid JSON structure detected.")
-                return {}
-
-            cleaned_text = text[start:end]
-            cleaned_text = cleaned_text.replace('\n', '').replace('\r', '')
+            cleaned_text = text[start:end].replace('\n', '').replace('\r', '')
             try:
                 return json.loads(cleaned_text)
             except json.JSONDecodeError as e:
@@ -167,10 +171,10 @@ class AIService:
             response_text = response.choices[0]['message']['content'].strip()
 
             # Save the raw response to a file
-            filename = f'files/{email_type}_raw_response.txt'
-            with open(filename, 'w') as f:
+            raw_filename = f'files/email_raw_{email_type}.json'
+            with open(raw_filename, 'w') as f:
                 f.write(response_text)
-            logger.info(f"Raw response saved in {filename}")
+            logger.info(f"Raw email response saved in {raw_filename}")
 
             email_json = self.cleanup_and_parse_json(response_text)
             return email_json

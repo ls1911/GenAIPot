@@ -3,7 +3,8 @@ import argparse
 import os
 from twisted.internet import reactor
 from smtp_protocol import SMTPFactory
-from pop3_protocol import POP3Factory
+#from genaipot.pop3.pop3_protocol import POP3Factory
+from pop3.pop3_protocol import POP3Factory
 from ai_services import AIService
 import configparser
 import datetime
@@ -46,16 +47,15 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
 
     # Query email examples
     email_prompts = [
-        f"Generate an email for a client related to the segment: {segment} in JSON format. "
-        f"The email should include a subject, body, mail from, and rcpt to field. The rcpt_to field "
-        f"should include a random name and the domain {domain}.",
-        f"Generate an email for a supplier related to the segment: {segment} in JSON format. "
-        f"The email should include a subject, body, mail from, and rcpt to field. The rcpt_to field "
-        f"should include a random name and the domain {domain}.",
-        f"Generate an email for an internal worker related to the segment: {segment} in JSON format. "
-        f"The email should include a subject, body, mail from, and rcpt to field. The rcpt_to field "
-        f"should include a random name and the domain {domain}."
-    ]
+    f"Generate an email for a client related to the segment: {segment}. The email should include a subject, body, and in the footer: "
+    f"'Best Regards, [Realistic Full Name], [Job Position], {domain}'. Replace [Realistic Full Name] with a realistic full name, and [Job Position] with an appropriate job position.",
+    
+    f"Generate an email for a supplier related to the segment: {segment}. The email should include a subject, body, and in the footer: "
+    f"'Best Regards, [Realistic Full Name], [Job Position], {domain}'. Replace [Realistic Full Name] with a realistic full name, and [Job Position] with an appropriate job position.",
+    
+    f"Generate an internal email related to the segment: {segment}. The email should include a subject, body, and in the footer: "
+    f"'Best Regards, [Realistic Full Name], [Job Position], {domain}'. Replace [Realistic Full Name] with a realistic full name, and [Job Position] with an appropriate job position."
+]
     
     for i, prompt in enumerate(email_prompts, 1):
         email_raw_response = ai_service.query_responses(prompt, f"email{i}")
