@@ -47,4 +47,3 @@ extra_css:
   - stylesheets/extra.css  # Add any custom CSS files
 extra_javascript:
   - javascripts/extra.js  # Add any custom JavaScript files
-
