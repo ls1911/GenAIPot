@@ -3,6 +3,7 @@ from twisted.protocols.basic import LineReceiver
 from twisted.internet import protocol
 from ai_services import AIService
 from database import log_interaction
+from auth import check_credentials
 import configparser
 from datetime import datetime
 
@@ -82,8 +83,19 @@ class SMTPProtocol(LineReceiver):
             return self.responses.get("354", "354 Start mail input; end with <CRLF>.<CRLF>")
         elif command_upper.startswith("QUIT"):
             return self.responses.get("221", f"221 {domain_name} Service closing transmission channel")
+        elif command_upper.startswith("AUTH LOGIN"):
+            username = self._read_base64_response()
+            password = self._read_base64_response()
+            if check_credentials(username, password):
+                return self.responses.get("235", "235 Authentication successful")
+            else:
+                return self.responses.get("535", "535 Authentication failed")
         else:
             return self.responses.get("500", "500 Command unrecognized")
+
+    def _read_base64_response(self):
+        # This method should be implemented to read the base64 encoded response for AUTH LOGIN
+        return "username"  # Replace this with actual base64 decoding logic
 
     def _format_responses(self, responses):
         if isinstance(responses, list):

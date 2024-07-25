@@ -1,71 +1,86 @@
 import logging
 import argparse
 import os
-from twisted.internet import reactor
-from smtp_protocol import SMTPFactory
-#from genaipot.pop3.pop3_protocol import POP3Factory
-from pop3.pop3_protocol import POP3Factory
-from ai_services import AIService
 import configparser
 import datetime
+from twisted.internet import reactor
+from smtp_protocol import SMTPFactory
+from pop3.pop3_protocol import POP3Factory
+from ai_services import AIService
+from auth import check_credentials, hash_password
 
 # Initialize logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Read config file
 config = configparser.ConfigParser()
 config.read('config.ini')
+prompts = configparser.ConfigParser()
+prompts.read('prompts.ini')
+
+VERSION = "0.3.2"
 
 def ensure_files_directory():
     if not os.path.exists('files'):
         os.makedirs('files')
 
 def query_ai_service_for_responses(technology, segment, domain, anonymous_access):
-    ai_service = AIService()
+    ai_service = AIService(debug_mode=args.debug)
+
+    # Load prompts from prompts.ini
+    smtp_prompt = prompts.get('Prompts', 'smtp_prompt').format(technology=technology)
+    pop3_prompt = prompts.get('Prompts', 'pop3_prompt').format(technology=technology)
+    email_prompts = [
+        prompts.get('Prompts', 'client_email_prompt').format(segment=segment, domain=domain),
+        prompts.get('Prompts', 'supplier_email_prompt').format(segment=segment, domain=domain),
+        prompts.get('Prompts', 'internal_email_prompt').format(segment=segment, domain=domain)
+    ]
 
     # Query SMTP responses
-    smtp_prompt = (
-        f"Provide a detailed list of SMTP command responses for the {technology} "
-        f"SMTP server in JSON format. The JSON should include common SMTP response codes "
-        f"such as 220, 221, 250, 251, 354, 421, 450, 451, 452, 500, 501, 502, 503, 504, "
-        f"550, 551, 552, 553, and 554, with appropriate messages."
-    )
+    logger.info("Generating service responses for SMTP...")
     smtp_raw_response = ai_service.query_responses(smtp_prompt, "smtp")
-    smtp_cleaned_response = ai_service._extract_and_clean_json(smtp_raw_response)
-    smtp_responses_path = ai_service._store_responses(smtp_cleaned_response, "smtp")
+    smtp_cleaned_response = ai_service.cleanup_and_parse_json(smtp_raw_response)
+    ai_service._store_responses(smtp_cleaned_response, "smtp")
 
     # Query POP3 responses
-    pop3_prompt = (
-        f"Provide a detailed list of POP3 command responses for the {technology} "
-        f"POP3 server in JSON format. The JSON should include common POP3 response codes "
-        f"such as +OK, -ERR with appropriate messages."
-    )
+    logger.info("Generating service responses for POP3...")
     pop3_raw_response = ai_service.query_responses(pop3_prompt, "pop3")
-    pop3_cleaned_response = ai_service._extract_and_clean_json(pop3_raw_response)
-    pop3_responses_path = ai_service._store_responses(pop3_cleaned_response, "pop3")
+    pop3_cleaned_response = ai_service.cleanup_and_parse_json(pop3_raw_response)
+    ai_service._store_responses(pop3_cleaned_response, "pop3")
 
     # Query email examples
-    email_prompts = [
-    f"Generate an email for a client related to the segment: {segment}. The email should include a subject, body, and in the footer: "
-    f"'Best Regards, [Realistic Full Name], [Job Position], {domain}'. Replace [Realistic Full Name] with a realistic full name, and [Job Position] with an appropriate job position.",
-    
-    f"Generate an email for a supplier related to the segment: {segment}. The email should include a subject, body, and in the footer: "
-    f"'Best Regards, [Realistic Full Name], [Job Position], {domain}'. Replace [Realistic Full Name] with a realistic full name, and [Job Position] with an appropriate job position.",
-    
-    f"Generate an internal email related to the segment: {segment}. The email should include a subject, body, and in the footer: "
-    f"'Best Regards, [Realistic Full Name], [Job Position], {domain}'. Replace [Realistic Full Name] with a realistic full name, and [Job Position] with an appropriate job position."
-]
-    
+    logger.info("Generating sample emails...")
     for i, prompt in enumerate(email_prompts, 1):
         email_raw_response = ai_service.query_responses(prompt, f"email{i}")
         email_cleaned_response = ai_service.cleanup_and_parse_json(email_raw_response)
         ai_service.save_email_responses(email_cleaned_response, f"email{i}")
 
+    # Update the config file with the technology, segment, domain, and anonymous access
     ai_service.update_config_technology(technology)
     ai_service.update_config_segment(segment)
     ai_service.update_config_domain(domain)
     ai_service.update_config_anonymous_access(anonymous_access)
+
+    # Handle user credentials if anonymous access is not allowed
+    if not anonymous_access:
+        username = input("Enter username: ")
+        password = input("Enter password: ")
+        hashed_password = hash_password(password)
+        config.set('server', 'username', username)
+        config.set('server', 'password', hashed_password)
+    else:
+        if config.has_option('server', 'username'):
+            config.remove_option('server', 'username')
+        if config.has_option('server', 'password'):
+            config.remove_option('server', 'password')
+
+    # Save the updated configuration
+    config.set('server', 'anonymous_access', str(anonymous_access))
+    with open('config.ini', 'w') as configfile:
+        config.write(configfile)
+
+    logger.info(f"Config file updated with anonymous_access: {anonymous_access}")
 
 def main():
     ensure_files_directory()
@@ -78,6 +93,13 @@ def main():
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
 
     args = parser.parse_args()
+
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+        logger.setLevel(logging.DEBUG)
+        logger.debug("Debug mode is enabled.")
+    else:
+        logging.basicConfig(level=logging.INFO)
 
     if args.config:
         technology = input("Choose the server technology to emulate:\n"
@@ -105,7 +127,7 @@ def main():
 
     if args.smtp or args.all:
         try:
-            logger.info(f"Starting GenAIPot Version 0.3.1")
+            logger.info(f"Starting GenAIPot Version {VERSION}")
             if args.debug:
                 start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 logger.info(f"Start Time: {start_time}")
@@ -114,6 +136,7 @@ def main():
                 logger.info(f"SQLite Logging Enabled: {config.getboolean('logging', 'sqlite', fallback=True)}")
                 logger.info(f"Server Technology: {config.get('server', 'technology', fallback='generic')}")
                 logger.info(f"Domain Name: {config.get('server', 'domain', fallback='localhost')}")
+                logging.getLogger('urllib3').setLevel(logging.DEBUG)
 
             smtp_factory = SMTPFactory()
             reactor.listenTCP(25, smtp_factory)
@@ -123,7 +146,7 @@ def main():
 
     if args.pop3 or args.all:
         try:
-            logger.info(f"Starting GenAIPot Version 0.3.1")
+            logger.info(f"Starting GenAIPot Version {VERSION}")
             if args.debug:
                 start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 logger.info(f"Start Time: {start_time}")
@@ -132,6 +155,7 @@ def main():
                 logger.info(f"SQLite Logging Enabled: {config.getboolean('logging', 'sqlite', fallback=True)}")
                 logger.info(f"Server Technology: {config.get('server', 'technology', fallback='generic')}")
                 logger.info(f"Domain Name: {config.get('server', 'domain', fallback='localhost')}")
+                logging.getLogger('urllib3').setLevel(logging.DEBUG)
 
             pop3_factory = POP3Factory()
             reactor.listenTCP(110, pop3_factory)

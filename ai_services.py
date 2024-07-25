@@ -3,57 +3,53 @@ import configparser
 import logging
 import json
 import os
+import time
+from json_utils import extract_and_clean_json
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 config = configparser.ConfigParser()
 config.read('config.ini')
 
 class AIService:
-    def __init__(self):
+    def __init__(self, debug_mode=False):
         self.technology = config.get('server', 'technology', fallback='generic')
         self.domain = config.get('server', 'domain', fallback='localhost')
         self.segment = config.get('server', 'segment', fallback='general')
         self.anonymous_access = config.getboolean('server', 'anonymous_access', fallback=False)
         openai.api_key = config['openai']['api_key']
+        self.debug_mode = debug_mode
+
+        if self.debug_mode:
+            logging.getLogger('openai').setLevel(logging.DEBUG)
+            logging.getLogger('urllib3').setLevel(logging.DEBUG)
+        else:
+            logging.getLogger('openai').setLevel(logging.WARNING)
+            logging.getLogger('urllib3').setLevel(logging.WARNING)
 
     def query_responses(self, prompt, response_type):
-        try:
-            response = openai.ChatCompletion.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=500
-            )
-            response_text = response.choices[0]['message']['content'].strip()
-
-            # Save the raw response to a file
-            self._save_raw_response(response_text, response_type)
-
-            return response_text
-        except Exception as e:
-            logger.error(f"Error querying OpenAI: {e}")
-            return ""
-
-    def _extract_and_clean_json(self, text):
-        try:
-            # Extract the JSON part from within the text
-            start = text.find('{')
-            end = text.rfind('}') + 1
-            if start == -1 or end == 0:
-                logger.error("Invalid JSON structure detected.")
-                return {}
-
-            json_text = text[start:end]
-            responses = json.loads(json_text)
-
-            return responses
-        except json.JSONDecodeError as e:
-            logger.error(f"Error parsing extracted JSON: {e}")
-            raise
+        for attempt in range(2):
+            try:
+                if self.debug_mode:
+                    logger.debug(f"Querying OpenAI for {response_type} responses...")
+                response = openai.ChatCompletion.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=500
+                )
+                response_text = response.choices[0]['message']['content'].strip()
+                self._save_raw_response(response_text, response_type)
+                return response_text
+            except Exception as e:
+                logger.error(f"Error querying OpenAI (attempt {attempt+1}/2): {e}")
+                if attempt == 1:
+                    logger.error("Failed to communicate with AI after 2 attempts. Exiting.")
+                    exit(1)
+                time.sleep(1)
 
     def _save_raw_response(self, response_text, response_type):
         filename = f'files/{self.technology}_{response_type}_raw_response.txt'
@@ -171,10 +167,10 @@ class AIService:
             response_text = response.choices[0]['message']['content'].strip()
 
             # Save the raw response to a file
-            raw_filename = f'files/email_raw_{email_type}.json'
-            with open(raw_filename, 'w') as f:
+            filename = f'files/{email_type}_raw_response.txt'
+            with open(filename, 'w') as f:
                 f.write(response_text)
-            logger.info(f"Raw email response saved in {raw_filename}")
+            logger.info(f"Raw response saved in {filename}")
 
             email_json = self.cleanup_and_parse_json(response_text)
             return email_json

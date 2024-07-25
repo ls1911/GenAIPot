@@ -1,12 +1,12 @@
 import logging
 from twisted.protocols.basic import LineReceiver
 from twisted.internet import protocol
-from pop3.pop3_states import handle_authorization
 from pop3.pop3_utils import generate_email_headers
 from ai_services import AIService
 from database import log_interaction
 import configparser
 import os
+from auth import check_credentials
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class POP3Protocol(LineReceiver):
             if self.state == 'TRANSACTION':
                 response = self.handle_pop3_command(command)
             elif self.state == 'AUTHORIZATION':
-                response = handle_authorization(self, command)
+                response = self.handle_authorization(command)
             else:
                 response = "-ERR Command not allowed in this state"
             if response:
@@ -149,6 +149,51 @@ class POP3Protocol(LineReceiver):
             return None
         else:
             return "-ERR command not recognized"
+
+    def handle_authorization(self, command):
+        """
+        Handle the authorization commands USER and PASS.
+        """
+        command = command.upper()
+        if command.startswith('USER'):
+            self.user = command.split(' ')[1] if len(command.split(' ')) > 1 else None
+            if self.user:
+                logger.debug(f"USER command received. Entered user: {self.user}")
+                if config.get('server', 'anonymous_access', fallback='True') == 'False':
+                    stored_username = config.get('server', 'username', fallback=None)
+                    logger.debug(f"Stored username: {stored_username}")
+                    if stored_username and stored_username == self.user:
+                        return "+OK User accepted"
+                    else:
+                        return "-ERR Invalid username"
+                return "+OK User accepted"
+            else:
+                return "-ERR Missing username"
+
+        elif command.startswith('PASS'):
+            self.passwd = command.split(' ')[1] if len(command.split(' ')) > 1 else None
+            if self.passwd:
+                stored_password = config.get('server', 'password', fallback=None)
+                logger.debug(f"Entered password: {self.passwd}")
+                logger.debug(f"Stored password (hashed): {stored_password}")
+                if config.get('server', 'anonymous_access', fallback='True') == 'True':
+                    logger.debug("Anonymous access enabled; skipping password check.")
+                    self.state = 'TRANSACTION'
+                    return "+OK Password accepted"
+                elif stored_password and check_credentials(self.user, self.passwd):
+                    logger.debug("PASS command received. Password verified. Moving to TRANSACTION state.")
+                    self.state = 'TRANSACTION'
+                    return "+OK Password accepted"
+                else:
+                    logger.debug("PASS command received. Password incorrect.")
+                    self.user = None
+                    self.passwd = None
+                    return "-ERR Invalid username or password"
+            else:
+                return "-ERR Missing password"
+
+        else:
+            return "-ERR Unrecognized command"
 
 class POP3Factory(protocol.Factory):
     def __init__(self):

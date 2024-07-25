@@ -1,0 +1,17 @@
+image: python:3.9
+
+stages:
+  - deploy
+
+before_script:
+  - pip install mkdocs mkdocs-material
+
+pages:
+  stage: deploy
+  script:
+    - mkdocs build -d public
+  artifacts:
+    paths:
+      - public
+  only:
+    - main  # Deploy only when the main branch is updated
