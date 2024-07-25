@@ -108,21 +108,20 @@ Mail Retrieval: Emails are downloaded from the server to the client.
 Session Management: Sessions can be established, maintained, and terminated. Messages can be marked for deletion during a session.
 Typical commands in POP3 include:
 
-USER: Specify the username for authentication.
-PASS: Provide the password for the user account.
-STAT: Get the number of messages and total size in the mailbox.
-LIST: Get a list of messages with their sizes.
-RETR: Retrieve a specific message.
-DELE: Mark a specific message for deletion.
-QUIT: End the session and optionally delete marked messages.
+- USER: Specify the username for authentication.
+- PASS: Provide the password for the user account.
+- STAT: Get the number of messages and total size in the mailbox.
+- LIST: Get a list of messages with their sizes.
+- RETR: Retrieve a specific message.
+- DELE: Mark a specific message for deletion.
+- QUIT: End the session.
 
 ### SMTP (Simple Mail Transfer Protocol)
 
 SMTP is a protocol used to send emails from a client to a server or between servers. It is a text-based protocol, where one or more recipients of a message are specified, and the message text is transferred. SMTP commands include:
 
-HELO: Greet the server, identify the client.
-MAIL FROM: Specify the sender’s email address.
-RCPT TO: Specify the recipient’s email address.
-DATA: Start the transfer of the message content.
-QUIT: End the session.
-SMTP is designed for the reliable and efficient transmission of emails, primarily used for sending and routing messages across networks.
+- HELO: Greet the server, identify the client.
+- MAIL FROM: Specify the sender’s email address.
+- RCPT TO: Specify the recipient’s email address.
+- DATA: Start the transfer of the message content.
+- QUIT: End the session.
