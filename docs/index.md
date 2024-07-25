@@ -1,6 +1,12 @@
 
 # 🄶🄴🄽🄰🄸🄿🄾🅃
 
+![Build Status](https://img.shields.io/github/actions/workflow/status/your-username/your-repo/main.yml?branch=main&style=flat-square)
+![Coverage](https://img.shields.io/codecov/c/github/your-username/your-repo?style=flat-square)
+![License](https://img.shields.io/github/license/your-username/your-repo?style=flat-square)
+![Python Version](https://img.shields.io/badge/python-3.7%2B-blue?style=flat-square)
+![Contributors](https://img.shields.io/github/contributors/your-username/your-repo?style=flat-square)
+![Last Commit](https://img.shields.io/github/last-commit/your-username/your-repo?style=flat-square)
 
 GenAIPot is the first a.i honeypot that emulates mail services.
 
