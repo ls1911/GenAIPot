@@ -1,4 +1,5 @@
 site_name: Your Project's Name
+docs_dir: 'docs'
 theme:
   name: 'material'
 nav:
