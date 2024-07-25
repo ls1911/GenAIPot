@@ -18,7 +18,10 @@ nav:
   - API Reference:
       - Main: reference/main.md
       - SMTP Protocol: reference/smtp_protocol.md
-      - POP3 Protocol: reference/pop3_protocol.md
+      - POP3 Module:
+          - POP3 Protocol: reference/pop3/pop3_protocol.md
+          - POP3 States: reference/pop3/pop3_states.md
+          - POP3 Utils: reference/pop3/pop3_utils.md
       - AI Services: reference/ai_services.md
       - Auth: reference/auth.md
 
