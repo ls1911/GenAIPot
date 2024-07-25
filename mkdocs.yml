@@ -1,0 +1,7 @@
+site_name: Your Project's Name
+theme:
+  name: 'material'
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Usage: usage.md
