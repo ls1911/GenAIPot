@@ -1,8 +1,50 @@
-site_name: Your Project's Name
-docs_dir: 'docs'
+site_name: GenaIPot Documentation
 theme:
-  name: 'material'
+  name: material
+  language: en
+  palette:
+    primary: 'indigo'
+    accent: 'indigo'
+  font:
+    text: Roboto
+    code: Roboto Mono
+  logo: images/logo.png  # Replace with your logo path
+  favicon: images/favicon.ico  # Replace with your favicon path
+  analytics:
+    provider: 'google'
+    tracking_id: 'UA-XXXXXX-X'  # Replace with your tracking ID
+
 nav:
   - Home: index.md
   - Installation: installation.md
   - Usage: usage.md
+  - API Reference:
+      - Main: reference/main.md
+      - SMTP Protocol: reference/smtp_protocol.md
+      - POP3 Protocol: reference/pop3_protocol.md
+      - AI Services: reference/ai_services.md
+      - Auth: reference/auth.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            show_root_heading: true
+            show_source: true
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - footnotes
+  - meta
+  - toc:
+      permalink: true
+
+extra_css:
+  - stylesheets/extra.css  # Add any custom CSS files
+extra_javascript:
+  - javascripts/extra.js  # Add any custom JavaScript files
+
