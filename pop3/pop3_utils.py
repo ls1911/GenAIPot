@@ -13,6 +13,15 @@ config.read('config.ini')
 domain_name = config.get('server', 'domain', fallback='localhost')
 
 def load_emails():
+    """
+    Load email data from predefined JSON files and prepare it for further processing.
+
+    This function checks specific JSON files for email data, extracts the contents, and formats them
+    into a structure suitable for use within the application. It includes email headers, body, and size.
+
+    Returns:
+        list: A list of dictionaries, each containing the email headers, body, full content, and size in bytes.
+    """
     email_files = [
         "files/email_email1.json",
         "files/email_email2.json",
@@ -50,13 +59,24 @@ def load_emails():
     return emails
 
 def generate_email_headers(email_body):
+    """
+    Generate synthetic email headers for a given email body.
+
+    This function creates fake email headers including fields such as 'Received', 'Message-ID', 'Date',
+    'From', and 'To', using random values for IP addresses and IDs. It simulates the email metadata.
+
+    Args:
+        email_body (dict): The body of the email for which headers are to be generated.
+
+    Returns:
+        str: A string containing the generated email headers.
+    """
     random_ip = f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}"
     message_id = f"<{random.randint(1000000000, 9999999999)}.{''.join(random.choices(string.ascii_letters + string.digits, k=5))}@{domain_name}>"
     current_time = datetime.datetime.now()
     received_time = current_time - datetime.timedelta(hours=random.randint(10, 18))
     message_date_time = current_time - datetime.timedelta(hours=random.randint(5, 8))
 
-    # Basic headers; modify according to actual email content
     headers = (
         f"Received: from {random_ip} by {domain_name} (SMTPD) id {''.join(random.choices(string.ascii_letters + string.digits, k=10))}\n"
         f"Message-ID: {message_id}\n"
@@ -67,12 +87,32 @@ def generate_email_headers(email_body):
     )
     return headers
 
-
 def log_interaction(ip, command, response):
-    # Implement the logging functionality
+    """
+    Log interactions between the client and the server.
+
+    This function logs the IP address of the client, the command sent, and the server's response.
+
+    Args:
+        ip (str): The IP address of the client.
+        command (str): The command issued by the client.
+        response (str): The response from the server.
+    """
     logger.info(f"IP: {ip}, Command: {command}, Response: {response}")
 
 def format_responses(responses):
+    """
+    Format the raw responses into a structured format for use in the application.
+
+    This function takes a dictionary of raw responses, typically from a POP3 server or similar service,
+    and restructures them into a more accessible format.
+
+    Args:
+        responses (dict): The raw responses dictionary.
+
+    Returns:
+        dict: A formatted dictionary where each key-value pair represents a code and its corresponding description.
+    """
     if isinstance(responses, dict):
         formatted_responses = {}
         for item in responses.get("POP3_Responses", []):
