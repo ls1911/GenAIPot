@@ -8,11 +8,8 @@ theme:
   font:
     text: Roboto
     code: Roboto Mono
-  logo: images/logo.png  # Replace with your logo path
-  favicon: images/favicon.ico  # Replace with your favicon path
-  analytics:
-    provider: 'google'
-    tracking_id: 'UA-XXXXXX-X'  # Replace with your tracking ID
+  logo: images/logo.png
+  favicon: images/favicon.ico
 
 nav:
   - Home: index.md
@@ -44,6 +41,6 @@ markdown_extensions:
       permalink: true
 
 extra_css:
-  - stylesheets/extra.css  # Add any custom CSS files
+  - stylesheets/extra.css
 extra_javascript:
-  - javascripts/extra.js  # Add any custom JavaScript files
+  - javascripts/extra.js
