@@ -1,18 +1,18 @@
 
 # 🄶🄴🄽🄰🄸🄿🄾🅃
 
-![Build Status](https://img.shields.io/github/actions/workflow/status/your-username/your-repo/main.yml?branch=main&style=flat-square)
-![Coverage](https://img.shields.io/codecov/c/github/your-username/your-repo?style=flat-square)
-![License](https://img.shields.io/github/license/your-username/your-repo?style=flat-square)
-![Python Version](https://img.shields.io/badge/python-3.7%2B-blue?style=flat-square)
-![Contributors](https://img.shields.io/github/contributors/your-username/your-repo?style=flat-square)
-![Last Commit](https://img.shields.io/github/last-commit/your-username/your-repo?style=flat-square)
+
+![License](https://img.shields.io/github/license/ls1911/GenAIPot?style=flat-square)
+![Python Version](https://img.shields.io/badge/python-3.12%2B-blue?style=flat-square)
+![Contributors](https://img.shields.io/github/contributors/ls1911/GenAIPot?style=flat-square)
+![Last Commit](https://img.shields.io/github/last-commit/ls1911/GenAIPot?style=flat-square)
+![Coverage](https://img.shields.io/codecov/c/github/ls1911/GenAIPot?style=flat-square)
 
 GenAIPot is the first a.i honeypot that emulates mail services.
 
 It uses various AI services to generate realistic responses to both POP3 and SMTP commands, logs all interactions to an SQLite database, and provides capabilities for anomaly detection and predictions using machine learning.
 
-
+https://github.com/ls1911/GenAIPot
 ## Overview
 
 Genaipot contains a custom implementation of the Post Office Protocol version 3 (POP3) and Simple Mail Transfer Protocol (SMTP) using Twisted framework in Python.
