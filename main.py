@@ -10,10 +10,9 @@ from ai_services import AIService
 from auth import check_credentials, hash_password
 
 # Initialize logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Read config file
+# Read config files
 config = configparser.ConfigParser()
 config.read('config.ini')
 prompts = configparser.ConfigParser()
@@ -22,10 +21,22 @@ prompts.read('prompts.ini')
 VERSION = "0.3.2"
 
 def ensure_files_directory():
+    """
+    Ensure the 'files' directory exists; create it if it does not.
+    """
     if not os.path.exists('files'):
         os.makedirs('files')
 
 def query_ai_service_for_responses(technology, segment, domain, anonymous_access):
+    """
+    Query AI service for generating SMTP and POP3 responses, and sample emails.
+    
+    Args:
+        technology (str): The technology of the server to emulate.
+        segment (str): The segment related to the emails.
+        domain (str): The domain name for the emails.
+        anonymous_access (bool): Whether anonymous access is allowed.
+    """
     ai_service = AIService(debug_mode=args.debug)
 
     # Load prompts from prompts.ini
@@ -83,6 +94,12 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
     logger.info(f"Config file updated with anonymous_access: {anonymous_access}")
 
 def main():
+    """
+    The main entry point for the GenAIPot honeypot.
+    
+    This function initializes logging, handles command-line arguments,
+    and starts the appropriate honeypot services.
+    """
     ensure_files_directory()
 
     parser = argparse.ArgumentParser(description="GenAIPot Honeypot Configuration")
