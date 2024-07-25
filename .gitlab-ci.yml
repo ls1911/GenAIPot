@@ -4,7 +4,7 @@ stages:
   - deploy
 
 before_script:
-  - pip install mkdocs mkdocs-material mkdocstrings
+  - pip install mkdocs mkdocs-material mkdocstrings mkdocstrings[python]
 
 pages:
   stage: deploy
