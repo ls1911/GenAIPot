@@ -1,4 +1,4 @@
-site_name: GenaIPot Documentation
+site_name: GenAIPot Documentation
 theme:
   name: material
   language: en
@@ -8,7 +8,7 @@ theme:
   font:
     text: Roboto
     code: Roboto Mono
-  logo: images/logo.png
+  logo: images/abc.png
   favicon: images/favicon.ico
 
 nav:
