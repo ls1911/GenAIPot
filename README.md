@@ -1,21 +1,23 @@
 
 # G̲e̲n̲A̲I̲P̲o̲t̲
 
-![t](/docs/images/abc.png)
-
 ![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-green?style=plastic)
 ![Python Version](https://img.shields.io/badge/python-3.12%2B-blue?style=flat-square)
 ![Coverage](https://img.shields.io/badge/build-pass-blue)
 
-GenAIPot is the first a.i honeypot that emulates mail services.
+
+### GenAIPot the first open source A.I honeypot
 
 ## Overview
 
-Genaipot contains a custom implementation of the Post Office Protocol version 3 (POP3) and Simple Mail Transfer Protocol (SMTP) using Twisted framework in Python.
+GenAIPot contains a custom implementation of the Post Office Protocol version 3 (POP3) and Simple Mail Transfer Protocol (SMTP) using Twisted framework in Python.
 It supports standard email operations such as user authentication, email retrieval, deletion, and session termination.
 It integrates AI-generated responses to provide dynamic and customizable email content and interactions. Additionally, the server includes analytics capabilities for monitoring and anomaly detection.
 
-** Dont forget to check documentation for more details **
+**Dont forget to check documentation for more details**
+
+
+![t](/docs/images/abc.png)
 
 ## Project Description
 
