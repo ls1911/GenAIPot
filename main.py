@@ -9,18 +9,7 @@ from pop3.pop3_protocol import POP3Factory
 from ai_services import AIService
 from auth import check_credentials, hash_password
 from database import setup_database
-
-# Initialize logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Read config file
-config = configparser.ConfigParser()
-config.read('config.ini')
-prompts = configparser.ConfigParser()
-prompts.read('prompts.ini')
-
-VERSION = "0.3.3"
+from halo import Halo
 
 # Initialize argument parser
 parser = argparse.ArgumentParser(description="GenAIPot - A honeypot simulation tool")
@@ -30,6 +19,24 @@ parser.add_argument('--pop3', action='store_true', help='Start POP3 honeypot')
 parser.add_argument('--all', action='store_true', help='Start all honeypots')
 parser.add_argument('--debug', action='store_true', help='Enable debug mode')
 args = parser.parse_args()
+
+# Set up logging based on the debug flag
+if args.debug:
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+else:
+    logging.basicConfig(level=logging.CRITICAL)
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.CRITICAL)
+
+# Read config file
+config = configparser.ConfigParser()
+config.read('config.ini')
+prompts = configparser.ConfigParser()
+prompts.read('prompts.ini')
+
+VERSION = "0.3.5"  # Incremented version number
 
 def ensure_files_directory():
     """Ensure the existence of the 'files' directory."""
@@ -58,24 +65,40 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
         prompts.get('Prompts', 'internal_email_prompt').format(segment=segment, domain=domain)
     ]
 
-    # Query SMTP responses
-    logger.info("Generating service responses for SMTP...")
-    smtp_raw_response = ai_service.query_responses(smtp_prompt, "smtp")
-    smtp_cleaned_response = ai_service.cleanup_and_parse_json(smtp_raw_response)
-    ai_service._store_responses(smtp_cleaned_response, "smtp")
+    # Spinner for SMTP responses
+    spinner = Halo(text='SMTP generating response (1/5)...', spinner='dots')
+    spinner.start()
+    try:
+        smtp_raw_response = ai_service.query_responses(smtp_prompt, "smtp")
+        smtp_cleaned_response = ai_service.cleanup_and_parse_json(smtp_raw_response)
+        ai_service._store_responses(smtp_cleaned_response, "smtp")
+        spinner.succeed('✔ SMTP responses generated successfully.')
+    except Exception as e:
+        spinner.fail('✖ Failed to generate SMTP responses.')
 
-    # Query POP3 responses
-    logger.info("Generating service responses for POP3...")
-    pop3_raw_response = ai_service.query_responses(pop3_prompt, "pop3")
-    pop3_cleaned_response = ai_service.cleanup_and_parse_json(pop3_raw_response)
-    ai_service._store_responses(pop3_cleaned_response, "pop3")
+    # Spinner for POP3 responses
+    spinner = Halo(text='POP3 generating response (2/5)...', spinner='dots')
+    spinner.start()
+    try:
+        pop3_raw_response = ai_service.query_responses(pop3_prompt, "pop3")
+        pop3_cleaned_response = ai_service.cleanup_and_parse_json(pop3_raw_response)
+        ai_service._store_responses(pop3_cleaned_response, "pop3")
+        spinner.succeed('✔ POP3 responses generated successfully.')
+    except Exception as e:
+        spinner.fail('✖ Failed to generate POP3 responses.')
 
-    # Query email examples
-    logger.info("Generating sample emails...")
-    for i, prompt in enumerate(email_prompts, 1):
-        email_raw_response = ai_service.query_responses(prompt, f"email{i}")
-        email_cleaned_response = ai_service.cleanup_and_parse_json(email_raw_response)
-        ai_service.save_email_responses(email_cleaned_response, f"email{i}")
+    # Spinner for sample emails
+    total_emails = len(email_prompts)
+    for i in range(total_emails):
+        spinner = Halo(text=f'Contacting A.I service and generating sample email #{i+1} ({i+3}/5)...', spinner='dots')
+        spinner.start()
+        try:
+            email_raw_response = ai_service.query_responses(email_prompts[i], f"email{i+1}")
+            email_cleaned_response = ai_service.cleanup_and_parse_json(email_raw_response)
+            ai_service.save_email_responses(email_cleaned_response, f"email{i+1}")
+            spinner.succeed(f'✔ Sample email #{i+1} generated successfully.')
+        except Exception as e:
+            spinner.fail(f'✖ Failed to generate sample email #{i+1}.')
 
     # Update the config file with the technology, segment, domain, and anonymous access
     ai_service.update_config_technology(technology)
@@ -109,13 +132,6 @@ def main():
 
     # Set up the database
     setup_database()
-
-    if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
-        logger.setLevel(logging.DEBUG)
-        logger.debug("Debug mode is enabled.")
-    else:
-        logging.basicConfig(level=logging.INFO)
 
     if args.config:
         technology = input("Choose the server technology to emulate:\n"
