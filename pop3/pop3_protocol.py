@@ -95,7 +95,7 @@ class POP3Protocol(LineReceiver):
         """
         emails = {}
         for i in range(1, 4):
-            filename = f'files/sendmail_email{i}_raw_response.txt'
+            filename = f'files/email{i}_raw_response.txt'
             if os.path.exists(filename):
                 with open(filename, 'r') as f:
                     emails[i] = f.read()
