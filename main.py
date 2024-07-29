@@ -8,6 +8,7 @@ from smtp_protocol import SMTPFactory
 from pop3.pop3_protocol import POP3Factory
 from ai_services import AIService
 from auth import check_credentials, hash_password
+from database import setup_database
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
@@ -19,14 +20,23 @@ config.read('config.ini')
 prompts = configparser.ConfigParser()
 prompts.read('prompts.ini')
 
-VERSION = "0.3.2"
+VERSION = "0.3.3"
+
+# Initialize argument parser
+parser = argparse.ArgumentParser(description="GenAIPot - A honeypot simulation tool")
+parser.add_argument('--config', action='store_true', help='Configure the honeypot with AI-generated responses')
+parser.add_argument('--smtp', action='store_true', help='Start SMTP honeypot')
+parser.add_argument('--pop3', action='store_true', help='Start POP3 honeypot')
+parser.add_argument('--all', action='store_true', help='Start all honeypots')
+parser.add_argument('--debug', action='store_true', help='Enable debug mode')
+args = parser.parse_args()
 
 def ensure_files_directory():
     """Ensure the existence of the 'files' directory."""
     if not os.path.exists('files'):
         os.makedirs('files')
 
-def query_ai_service_for_responses(technology, segment, domain, anonymous_access):
+def query_ai_service_for_responses(technology, segment, domain, anonymous_access, debug_mode):
     """
     Query the AI service for SMTP and POP3 responses and sample emails.
 
@@ -35,8 +45,9 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
         segment (str): The segment of the industry or application.
         domain (str): The domain name for the service.
         anonymous_access (bool): Whether anonymous access is allowed.
+        debug_mode (bool): Whether to enable debug mode.
     """
-    ai_service = AIService(debug_mode=args.debug)
+    ai_service = AIService(debug_mode=debug_mode)
 
     # Load prompts from prompts.ini
     smtp_prompt = prompts.get('Prompts', 'smtp_prompt').format(technology=technology)
@@ -96,14 +107,8 @@ def main():
     """Main function to run the GenAIPot honeypot services."""
     ensure_files_directory()
 
-    parser = argparse.ArgumentParser(description="GenAIPot Honeypot Configuration")
-    parser.add_argument("--config", action="store_true", help="Configure the honeypot with AI-generated responses")
-    parser.add_argument("--smtp", action="store_true", help="Start the SMTP honeypot service")
-    parser.add_argument("--pop3", action="store_true", help="Start the POP3 honeypot service")
-    parser.add_argument("--all", action="store_true", help="Start both SMTP and POP3 honeypot services")
-    parser.add_argument("--debug", action="store_true", help="Enable debug mode")
-
-    args = parser.parse_args()
+    # Set up the database
+    setup_database()
 
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
@@ -133,7 +138,7 @@ def main():
         segment = input("Enter the segment: ")
         domain = input("Enter the domain name: ")
         anonymous_access = input("Allow anonymous access? (y/n): ").lower() == 'y'
-        query_ai_service_for_responses(technology, segment, domain, anonymous_access)
+        query_ai_service_for_responses(technology, segment, domain, anonymous_access, args.debug)
         return
 
     if args.smtp or args.all:
