@@ -36,7 +36,7 @@ config.read('config.ini')
 prompts = configparser.ConfigParser()
 prompts.read('prompts.ini')
 
-VERSION = "0.3.5"  # Incremented version number
+VERSION = "0.3.6"  # Incremented version number
 
 def ensure_files_directory():
     """Ensure the existence of the 'files' directory."""
@@ -189,7 +189,9 @@ def main():
                 logger.info(f"Domain Name: {config.get('server', 'domain', fallback='localhost')}")
                 logging.getLogger('urllib3').setLevel(logging.DEBUG)
 
-            pop3_factory = POP3Factory()
+            print ("444")
+            print (args.debug)
+            pop3_factory = POP3Factory(debug=args.debug)
             reactor.listenTCP(110, pop3_factory)
             logger.info("POP3 honeypot started on port 110")
         except Exception as e:

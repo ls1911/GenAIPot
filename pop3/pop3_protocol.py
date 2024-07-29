@@ -16,7 +16,7 @@ domain_name = config.get('server', 'domain', fallback='localhost')
 technology = config.get('server', 'technology', fallback='generic')
 
 class POP3Protocol(LineReceiver):
-    def __init__(self):
+    def __init__(self, debug=False):
         self.ip = None
         self.ai_service = AIService()
         self.responses = self.load_responses()
@@ -25,7 +25,11 @@ class POP3Protocol(LineReceiver):
         self.passwd = None
         self.emails = self.load_raw_emails()
         self.deleted_emails = set()
-        if config.getboolean('server', 'debug', fallback=False):
+        self.debug = debug
+        logging.basicConfig(level=logging.DEBUG)
+
+        if self.debug:
+            
             logger.debug(f"POP3Protocol initialized with {len(self.emails)} emails loaded.")
 
     def connectionMade(self):
@@ -37,8 +41,14 @@ class POP3Protocol(LineReceiver):
 
     def lineReceived(self, line):
         try:
-            command = line.decode('utf-8').strip()
+            command = line.decode('utf-8').strip().upper()
             logger.info(f"Received command: {command}")
+            if command == 'QUIT':
+                response = "+OK Goodbye"
+                self.sendLine(response.encode('utf-8'))
+                self.transport.loseConnection()
+                return
+            
             if self.state == 'TRANSACTION':
                 response = self.handle_pop3_command(command)
             elif self.state == 'AUTHORIZATION':
@@ -53,9 +63,6 @@ class POP3Protocol(LineReceiver):
             self.sendLine(b"-ERR Command unrecognized")
 
     def load_responses(self):
-        """
-        Load the raw response text from the saved response files.
-        """
         try:
             with open(f'files/{technology}_pop3_raw_response.txt', 'r') as f:
                 raw_responses = f.read()
@@ -69,9 +76,6 @@ class POP3Protocol(LineReceiver):
             return self.default_pop3_responses()
 
     def format_responses(self, raw_responses):
-        """
-        Format raw responses into a usable structure.
-        """
         response_dict = {}
         lines = raw_responses.splitlines()
         for line in lines:
@@ -81,18 +85,12 @@ class POP3Protocol(LineReceiver):
         return response_dict
 
     def default_pop3_responses(self):
-        """
-        Provide default POP3 responses if the response file is not available.
-        """
         return {
             "+OK": f"+OK {domain_name} {technology} POP3 server ready",
             "-ERR": "-ERR Default error response"
         }
 
     def load_raw_emails(self):
-        """
-        Load raw email contents from the response files.
-        """
         emails = {}
         for i in range(1, 4):
             filename = f'files/email{i}_raw_response.txt'
@@ -105,10 +103,6 @@ class POP3Protocol(LineReceiver):
         return emails
 
     def handle_pop3_command(self, command):
-        """
-        Handle POP3 commands using the raw response files.
-        """
-        command = command.upper()
         if command == 'STAT':
             num_messages = len(self.emails) - len(self.deleted_emails)
             total_size = sum(len(email) for i, email in self.emails.items() if i not in self.deleted_emails)
@@ -148,19 +142,18 @@ class POP3Protocol(LineReceiver):
             self.transport.loseConnection()
             return None
         else:
-            return "-ERR command not recognized"
+            return "-ERR Unrecognized command"
 
     def handle_authorization(self, command):
-        """
-        Handle the authorization commands USER and PASS.
-        """
         command = command.upper()
         if command.startswith('USER'):
-            self.user = command.split(' ')[1] if len(command.split(' ')) > 1 else None
+            self.user = command.split(' ')[1].lower() if len(command.split(' ')) > 1 else None
+            print (f"USER command received. Entered user: {self.user}")
             if self.user:
                 logger.debug(f"USER command received. Entered user: {self.user}")
                 if config.get('server', 'anonymous_access', fallback='True') == 'False':
                     stored_username = config.get('server', 'username', fallback=None)
+                    print(f"Stored username: {stored_username}")
                     logger.debug(f"Stored username: {stored_username}")
                     if stored_username and stored_username == self.user:
                         return "+OK User accepted"
@@ -171,7 +164,7 @@ class POP3Protocol(LineReceiver):
                 return "-ERR Missing username"
 
         elif command.startswith('PASS'):
-            self.passwd = command.split(' ')[1] if len(command.split(' ')) > 1 else None
+            self.passwd = command.split(' ')[1].lower() if len(command.split(' ')) > 1 else None
             if self.passwd:
                 stored_password = config.get('server', 'password', fallback=None)
                 logger.debug(f"Entered password: {self.passwd}")
@@ -196,11 +189,13 @@ class POP3Protocol(LineReceiver):
             return "-ERR Unrecognized command"
 
 class POP3Factory(protocol.Factory):
-    def __init__(self):
-        if config.getboolean('server', 'debug', fallback=False):
-            logger.debug("POP3Factory initialized")
+    def __init__(self, debug=False):
+        self.debug = debug
+        print("33333")
+        print(debug)
 
     def buildProtocol(self, addr):
-        if config.getboolean('server', 'debug', fallback=False):
-            logger.debug(f"Building POP3 protocol for {addr}")
-        return POP3Protocol()
+        print("Building POP3 protocol with debug =", self.debug)
+        if self.debug:
+            logging.basicConfig(level=logging.DEBUG)
+        return POP3Protocol(debug=self.debug)
