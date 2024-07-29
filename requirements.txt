@@ -3,3 +3,4 @@ openai==0.28.0
 pandas==2.2.2
 prophet==1.1.5
 Twisted==24.3.0
+halo
