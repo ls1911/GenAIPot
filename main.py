@@ -26,9 +26,9 @@ if args.debug:
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
 else:
-    logging.basicConfig(level=logging.CRITICAL)
+    logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.CRITICAL)
+    logger.setLevel(logging.INFO)
 
 # Read config file
 config = configparser.ConfigParser()
@@ -66,7 +66,7 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
     ]
 
     # Spinner for SMTP responses
-    spinner = Halo(text='SMTP generating response (1/5)...', spinner='dots')
+    spinner = Halo(text='SMTP Contacting A.I service and generating responses (1/5)...', spinner='dots')
     spinner.start()
     try:
         smtp_raw_response = ai_service.query_responses(smtp_prompt, "smtp")
@@ -77,7 +77,7 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
         spinner.fail('✖ Failed to generate SMTP responses.')
 
     # Spinner for POP3 responses
-    spinner = Halo(text='POP3 generating response (2/5)...', spinner='dots')
+    spinner = Halo(text='POP3 Contacting A.I service and generating responses (2/5)...', spinner='dots')
     spinner.start()
     try:
         pop3_raw_response = ai_service.query_responses(pop3_prompt, "pop3")
@@ -150,10 +150,17 @@ def main():
             '5': 'zimbra',
             '6': 'other'
         }.get(technology, 'generic')
-        
+
+        openai_key = input("Enter your OpenAI API key: ")
         segment = input("Enter the segment: ")
         domain = input("Enter the domain name: ")
         anonymous_access = input("Allow anonymous access? (y/n): ").lower() == 'y'
+
+        # Save the OpenAI API key to the config file
+        config.set('openai', 'api_key', openai_key)
+        with open('config.ini', 'w') as configfile:
+            config.write(configfile)
+
         query_ai_service_for_responses(technology, segment, domain, anonymous_access, args.debug)
         return
 
@@ -189,8 +196,6 @@ def main():
                 logger.info(f"Domain Name: {config.get('server', 'domain', fallback='localhost')}")
                 logging.getLogger('urllib3').setLevel(logging.DEBUG)
 
-            print ("444")
-            print (args.debug)
             pop3_factory = POP3Factory(debug=args.debug)
             reactor.listenTCP(110, pop3_factory)
             logger.info("POP3 honeypot started on port 110")
