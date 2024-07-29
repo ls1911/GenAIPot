@@ -148,12 +148,12 @@ class POP3Protocol(LineReceiver):
         command = command.upper()
         if command.startswith('USER'):
             self.user = command.split(' ')[1].lower() if len(command.split(' ')) > 1 else None
-            print (f"USER command received. Entered user: {self.user}")
+            
             if self.user:
                 logger.debug(f"USER command received. Entered user: {self.user}")
                 if config.get('server', 'anonymous_access', fallback='True') == 'False':
                     stored_username = config.get('server', 'username', fallback=None)
-                    print(f"Stored username: {stored_username}")
+                    
                     logger.debug(f"Stored username: {stored_username}")
                     if stored_username and stored_username == self.user:
                         return "+OK User accepted"
@@ -191,8 +191,6 @@ class POP3Protocol(LineReceiver):
 class POP3Factory(protocol.Factory):
     def __init__(self, debug=False):
         self.debug = debug
-        print("33333")
-        print(debug)
 
     def buildProtocol(self, addr):
         print("Building POP3 protocol with debug =", self.debug)
