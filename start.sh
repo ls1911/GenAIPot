@@ -1,5 +1,5 @@
 #!/bin/bash
 
-python3 main.py --config
+python3 bin/genaipot.py --config
 
-python3 main.py --all
+python3 bin/genaipot.py --all
