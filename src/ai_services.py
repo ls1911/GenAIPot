@@ -8,8 +8,12 @@ import time
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.ERROR)  # Default to ERROR level
 
+#config = configparser.ConfigParser()
+#config.read('../etc/config.ini')
+        # Read config file
+config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'config.ini'))
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read(config_file_path)
 
 class AIService:
     def __init__(self, debug_mode=False):
@@ -17,6 +21,11 @@ class AIService:
         self.domain = config.get('server', 'domain', fallback='localhost')
         self.segment = config.get('server', 'segment', fallback='general')
         self.anonymous_access = config.getboolean('server', 'anonymous_access', fallback=False)
+
+        if not config.has_section('openai'):
+            config.add_section('openai')
+            print ("no")
+
         openai.api_key = config['openai']['api_key']
         self.debug_mode = debug_mode
 

@@ -1,0 +1,45 @@
+{
+  "pop3_responses":
+  [
+    {
+      "code": "+OK",
+      "responses": 
+      [
+        {
+          "message": "Service ready",
+          "description": "The server is ready to accept commands."
+        }, 
+        {
+          "message": "Command accepted",
+          "description": "The command was successfully processed by the server."
+        },
+        {
+          "message": "Message follows",
+          "description": "The server is about to send a mail message."
+        }
+      ]
+    },
+    {
+      "code": "-ERR",
+      "responses": 
+      [
+        {
+          "message": "Command not recognized",
+          "description": "The server did not understand the command that was sent."
+        },
+        {
+          "message": "Command not implemented",
+          "description": "The server does not have the capabilities to carry out the command."
+        },
+        {
+          "message": "Message not available",
+          "description": "The message requested by the client is not available."
+        },
+        {
+          "message": "Mailbox unavailable",
+          "description": "The mailbox requested by the client cannot be accessed."
+        }
+      ]
+    }
+  ]
+}

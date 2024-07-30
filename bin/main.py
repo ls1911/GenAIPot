@@ -1,6 +1,10 @@
+
 import logging
 import argparse
 import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
+
 import configparser
 import datetime
 from twisted.internet import reactor
@@ -12,6 +16,7 @@ from database import setup_database
 from halo import Halo
 import openai
 import art
+import shutil
 
 # Initialize argument parser
 parser = argparse.ArgumentParser(description="GenAIPot - A honeypot simulation tool")
@@ -33,12 +38,17 @@ else:
     logger.setLevel(logging.INFO)
 
 # Read config file
-config = configparser.ConfigParser()
-config.read('config.ini')
-prompts = configparser.ConfigParser()
-prompts.read('prompts.ini')
+prompts_config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'prompts.ini'))
+config_config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'config.ini'))
 
-VERSION = "0.3.6"  # Incremented version number
+config = configparser.ConfigParser()
+config.read(config_config_file_path)
+prompts = configparser.ConfigParser()
+
+prompts.read(prompts_config_file_path)
+
+
+VERSION = "0.4.1"  # Incremented version number
 
 def ensure_files_directory():
     """Ensure the existence of the 'files' directory."""
@@ -51,7 +61,10 @@ def validate_openai_key(api_key):
     try:
         # Attempt a simple API request to verify the key
         openai.Engine.list()
-        print("API key is valid.")
+        spinner = Halo(text="API key is valid.", spinner='dots')
+        spinner.start()
+        spinner.stop_and_persist(symbol='🦄'.encode('utf-8'))
+        print ("---------------------------------------")
         return True
     except openai.error.AuthenticationError:
         print("Invalid API key. Please enter a valid OpenAI API key.")
@@ -62,11 +75,7 @@ def validate_openai_key(api_key):
 
 def run_config_wizard():
     """Runs the configuration wizard to set up the honeypot."""
-    
-    Art=art.text2art("GenAIPot")
-    print(Art)
-    print(f"Version: {VERSION}")
-    print("The first Generative A.I Honeypot\n")
+
     spinner = Halo(text="Initiating Configuration Wizard", spinner='dots')
     spinner.start()
     spinner.stop_and_persist(symbol='🦄'.encode('utf-8'))
@@ -77,7 +86,28 @@ def run_config_wizard():
     with Halo(text='Verifying A.I key...', spinner='dots') as spinner:
         if not validate_openai_key(openai_key):
             spinner.fail("A valid key is needed for GenAIPot to function properly.")
-            return
+            use_default = input("Do you want to use default template files instead of the A.I service generating them dynamically for you? (y/n): ").lower() == 'y'
+            if not use_default:
+                print("Exiting the application. Please provide a valid OpenAI API key.")
+                exit(1)
+            else:
+                # Copy default files from var/no_ai to files/
+                if not os.path.exists('files'):
+                    os.makedirs('files')
+                for filename in os.listdir('var/no_ai'):
+                    src_path = os.path.join('var/no_ai', filename)
+                    dst_path = os.path.join('files', filename)
+                    shutil.copyfile(src_path, dst_path)
+
+                # Update the config file to reflect the use of default templates
+                #config.set('openai', 'api_key', 'no_ai')
+                #with open('config.ini', 'w') as configfile:
+                #    config.write(configfile)
+                
+                shutil.copyfile('var/no_ai/config.ini', 'etc/config.ini')
+                print("Default template files have been used.")
+                return
+
         spinner.succeed("A.I key verified successfully.")
 
     technology = input("Choose the server technology to emulate:\n"
@@ -99,30 +129,37 @@ def run_config_wizard():
 
     segment = input("Enter the segment (Description of the industry segment; for example: an international bank located in nome alsaka.): ")
     domain = input("Enter the domain name (name for your fictional company): ")
-    anonymous_access = input("Allow anonymous access? (y/n): (if yes , any username will be accepted)").lower() == 'y'
+    anonymous_access = input("Allow anonymous access? (y/n): (if yes, any username will be accepted)").lower() == 'y'
 
-    # Use Halo spinner for saving configuration
+    # Ask for credentials after the spinner is done
+    if not anonymous_access:
+        username = input("Enter username: ")
+        password = input("Enter password: ")
+        hashed_password = hash_password(password)
+        config.set('server', 'username', username)
+        config.set('server', 'password', hashed_password)
+    else:
+        if config.has_option('server', 'username'):
+            config.remove_option('server', 'username')
+        if config.has_option('server', 'password'):
+            config.remove_option('server', 'password')
+    
+    
+
     with Halo(text='Saving configuration...', spinner='dots') as spinner:
         # Save the configuration to the config file
+        if not config.has_section('openai'):
+            config.add_section('openai')
+        if not config.has_section('server'):
+            config.add_section('server')
+
         config.set('openai', 'api_key', openai_key)
         config.set('server', 'technology', technology)
         config.set('server', 'segment', segment)
         config.set('server', 'domain', domain)
         config.set('server', 'anonymous_access', str(anonymous_access))
 
-        if not anonymous_access:
-            username = input("Enter username: ")
-            password = input("Enter password: ")
-            hashed_password = hash_password(password)
-            config.set('server', 'username', username)
-            config.set('server', 'password', hashed_password)
-        else:
-            if config.has_option('server', 'username'):
-                config.remove_option('server', 'username')
-            if config.has_option('server', 'password'):
-                config.remove_option('server', 'password')
-
-        with open('config.ini', 'w') as configfile:
+        with open('etc/config.ini', 'w') as configfile:
             config.write(configfile)
 
         spinner.succeed("Configuration has been saved successfully.")
@@ -145,6 +182,7 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
         debug_mode (bool): Whether to enable debug mode.
     """
     ai_service = AIService(debug_mode=debug_mode)
+    
 
     # Load prompts from prompts.ini
     smtp_prompt = prompts.get('Prompts', 'smtp_prompt').format(technology=technology)
@@ -189,12 +227,13 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
             spinner.succeed(f'Sample email #{i+1} generated successfully.')
         except Exception as e:
             spinner.fail(f'✖ Failed to generate sample email #{i+1}.')
+            logger.error(f"Error generating sample email #{i+1}: {e}")
 
     # Update the config file with the technology, segment, domain, and anonymous access
-    ai_service.update_config_technology(technology)
-    ai_service.update_config_segment(segment)
-    ai_service.update_config_domain(domain)
-    ai_service.update_config_anonymous_access(anonymous_access)
+    config.set('server', 'technology', technology)
+    config.set('server', 'segment', segment)
+    config.set('server', 'domain', domain)
+    config.set('server', 'anonymous_access', str(anonymous_access))
 
     # Handle user credentials if anonymous access is not allowed
     if not anonymous_access:
@@ -210,8 +249,7 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
             config.remove_option('server', 'password')
 
     # Save the updated configuration
-    config.set('server', 'anonymous_access', str(anonymous_access))
-    with open('config.ini', 'w') as configfile:
+    with open('etc/config.ini', 'w') as configfile:
         config.write(configfile)
 
     logger.info(f"Config file updated with anonymous_access: {anonymous_access}")
@@ -223,18 +261,34 @@ def main():
     # Set up the database
     setup_database()
 
+    Art = art.text2art("GenAIPot")
+    print(Art)
+    print ("---------------------------------------")
+    a=f"Version: {VERSION}"
+    spinner = Halo(text=a, spinner='dots')    
+    spinner.succeed()
+    #spinner.stop_and_persist()
+    spinner = Halo(text="The first Generative A.I Honeypot", spinner='dots')
+    
+    spinner.stop_and_persist(symbol='🦄'.encode('utf-8'))
+
     if args.config:
         run_config_wizard()
         return
 
-    # Check for the presence of an OpenAI API key before starting services
-    if not config.has_option('openai', 'api_key') or not validate_openai_key(config.get('openai', 'api_key')):
+    # Check for the presence of an OpenAI API key or 'no_ai' setting
+    api_key = config.get('openai', 'api_key', fallback='')
+    
+    if api_key == 'no_ai':
+        print("Using default templates as no valid A.I key is set.")
+    elif not validate_openai_key(api_key):
         print("No valid A.I key found. Please run the configuration wizard to set up the necessary key.")
         run_config_wizard()
         return
 
     if args.smtp or args.pop3 or args.all:
         try:
+            print ("\n")
             logger.info(f"Starting GenAIPot Version {VERSION}")
             if args.debug:
                 start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
