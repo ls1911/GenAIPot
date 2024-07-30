@@ -10,6 +10,8 @@ from ai_services import AIService
 from auth import check_credentials, hash_password
 from database import setup_database
 from halo import Halo
+import openai
+import art
 
 # Initialize argument parser
 parser = argparse.ArgumentParser(description="GenAIPot - A honeypot simulation tool")
@@ -43,6 +45,94 @@ def ensure_files_directory():
     if not os.path.exists('files'):
         os.makedirs('files')
 
+def validate_openai_key(api_key):
+    """Validate the OpenAI API key by making a simple API call."""
+    openai.api_key = api_key
+    try:
+        # Attempt a simple API request to verify the key
+        openai.Engine.list()
+        print("API key is valid.")
+        return True
+    except openai.error.AuthenticationError:
+        print("Invalid API key. Please enter a valid OpenAI API key.")
+        return False
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return False
+
+def run_config_wizard():
+    """Runs the configuration wizard to set up the honeypot."""
+    
+    Art=art.text2art("GenAIPot")
+    print(Art)
+    print(f"Version: {VERSION}")
+    print("The first Generative A.I Honeypot\n")
+    spinner = Halo(text="Initiating Configuration Wizard", spinner='dots')
+    spinner.start()
+    spinner.stop_and_persist(symbol='🦄'.encode('utf-8'))
+
+    openai_key = input("Enter your OpenAI API key: ")
+
+    # Use Halo spinner for key verification
+    with Halo(text='Verifying A.I key...', spinner='dots') as spinner:
+        if not validate_openai_key(openai_key):
+            spinner.fail("A valid key is needed for GenAIPot to function properly.")
+            return
+        spinner.succeed("A.I key verified successfully.")
+
+    technology = input("Choose the server technology to emulate:\n"
+                       "1. sendmail\n"
+                       "2. exchange\n"
+                       "3. qmail\n"
+                       "4. postfix\n"
+                       "5. zimbra\n"
+                       "6. other\n"
+                       "Enter the number of your choice: ")
+    technology = {
+        '1': 'sendmail',
+        '2': 'exchange',
+        '3': 'qmail',
+        '4': 'postfix',
+        '5': 'zimbra',
+        '6': 'other'
+    }.get(technology, 'generic')
+
+    segment = input("Enter the segment (Description of the industry segment; for example: an international bank located in nome alsaka.): ")
+    domain = input("Enter the domain name (name for your fictional company): ")
+    anonymous_access = input("Allow anonymous access? (y/n): (if yes , any username will be accepted)").lower() == 'y'
+
+    # Use Halo spinner for saving configuration
+    with Halo(text='Saving configuration...', spinner='dots') as spinner:
+        # Save the configuration to the config file
+        config.set('openai', 'api_key', openai_key)
+        config.set('server', 'technology', technology)
+        config.set('server', 'segment', segment)
+        config.set('server', 'domain', domain)
+        config.set('server', 'anonymous_access', str(anonymous_access))
+
+        if not anonymous_access:
+            username = input("Enter username: ")
+            password = input("Enter password: ")
+            hashed_password = hash_password(password)
+            config.set('server', 'username', username)
+            config.set('server', 'password', hashed_password)
+        else:
+            if config.has_option('server', 'username'):
+                config.remove_option('server', 'username')
+            if config.has_option('server', 'password'):
+                config.remove_option('server', 'password')
+
+        with open('config.ini', 'w') as configfile:
+            config.write(configfile)
+
+        spinner.succeed("Configuration has been saved successfully.")
+
+    logger.info("Configuration has been updated.")
+    print("Configuration has been saved.")
+
+    # Generate responses and sample emails using the AI service
+    query_ai_service_for_responses(technology, segment, domain, anonymous_access, args.debug)
+
 def query_ai_service_for_responses(technology, segment, domain, anonymous_access, debug_mode):
     """
     Query the AI service for SMTP and POP3 responses and sample emails.
@@ -72,9 +162,9 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
         smtp_raw_response = ai_service.query_responses(smtp_prompt, "smtp")
         smtp_cleaned_response = ai_service.cleanup_and_parse_json(smtp_raw_response)
         ai_service._store_responses(smtp_cleaned_response, "smtp")
-        spinner.succeed('✔ SMTP responses generated successfully.')
+        spinner.succeed('SMTP responses generated successfully.')
     except Exception as e:
-        spinner.fail('✖ Failed to generate SMTP responses.')
+        spinner.fail('Failed to generate SMTP responses.')
 
     # Spinner for POP3 responses
     spinner = Halo(text='POP3 Contacting A.I service and generating responses (2/5)...', spinner='dots')
@@ -83,7 +173,7 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
         pop3_raw_response = ai_service.query_responses(pop3_prompt, "pop3")
         pop3_cleaned_response = ai_service.cleanup_and_parse_json(pop3_raw_response)
         ai_service._store_responses(pop3_cleaned_response, "pop3")
-        spinner.succeed('✔ POP3 responses generated successfully.')
+        spinner.succeed('POP3 responses generated successfully.')
     except Exception as e:
         spinner.fail('✖ Failed to generate POP3 responses.')
 
@@ -96,7 +186,7 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
             email_raw_response = ai_service.query_responses(email_prompts[i], f"email{i+1}")
             email_cleaned_response = ai_service.cleanup_and_parse_json(email_raw_response)
             ai_service.save_email_responses(email_cleaned_response, f"email{i+1}")
-            spinner.succeed(f'✔ Sample email #{i+1} generated successfully.')
+            spinner.succeed(f'Sample email #{i+1} generated successfully.')
         except Exception as e:
             spinner.fail(f'✖ Failed to generate sample email #{i+1}.')
 
@@ -134,77 +224,43 @@ def main():
     setup_database()
 
     if args.config:
-        technology = input("Choose the server technology to emulate:\n"
-                           "1. sendmail\n"
-                           "2. exchange\n"
-                           "3. qmail\n"
-                           "4. postfix\n"
-                           "5. zimbra\n"
-                           "6. other\n"
-                           "Enter the number of your choice: ")
-        technology = {
-            '1': 'sendmail',
-            '2': 'exchange',
-            '3': 'qmail',
-            '4': 'postfix',
-            '5': 'zimbra',
-            '6': 'other'
-        }.get(technology, 'generic')
-
-        openai_key = input("Enter your OpenAI API key: ")
-        segment = input("Enter the segment: ")
-        domain = input("Enter the domain name: ")
-        anonymous_access = input("Allow anonymous access? (y/n): ").lower() == 'y'
-
-        # Save the OpenAI API key to the config file
-        config.set('openai', 'api_key', openai_key)
-        with open('config.ini', 'w') as configfile:
-            config.write(configfile)
-
-        query_ai_service_for_responses(technology, segment, domain, anonymous_access, args.debug)
+        run_config_wizard()
         return
 
-    if args.smtp or args.all:
-        try:
-            logger.info(f"Starting GenAIPot Version {VERSION}")
-            if args.debug:
-                start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                logger.info(f"Start Time: {start_time}")
-                logger.info(f"IP: {config.get('server', 'ip', fallback='localhost')}")
-                logger.info(f"Listening Ports: 25")
-                logger.info(f"SQLite Logging Enabled: {config.getboolean('logging', 'sqlite', fallback=True)}")
-                logger.info(f"Server Technology: {config.get('server', 'technology', fallback='generic')}")
-                logger.info(f"Domain Name: {config.get('server', 'domain', fallback='localhost')}")
-                logging.getLogger('urllib3').setLevel(logging.DEBUG)
-
-            smtp_factory = SMTPFactory()
-            reactor.listenTCP(25, smtp_factory)
-            logger.info("SMTP honeypot started on port 25")
-        except Exception as e:
-            logger.error(f"Failed to start SMTP honeypot: {e}")
-
-    if args.pop3 or args.all:
-        try:
-            logger.info(f"Starting GenAIPot Version {VERSION}")
-            if args.debug:
-                start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                logger.info(f"Start Time: {start_time}")
-                logger.info(f"IP: {config.get('server', 'ip', fallback='localhost')}")
-                logger.info(f"Listening Ports: 110")
-                logger.info(f"SQLite Logging Enabled: {config.getboolean('logging', 'sqlite', fallback=True)}")
-                logger.info(f"Server Technology: {config.get('server', 'technology', fallback='generic')}")
-                logger.info(f"Domain Name: {config.get('server', 'domain', fallback='localhost')}")
-                logging.getLogger('urllib3').setLevel(logging.DEBUG)
-
-            pop3_factory = POP3Factory(debug=args.debug)
-            reactor.listenTCP(110, pop3_factory)
-            logger.info("POP3 honeypot started on port 110")
-        except Exception as e:
-            logger.error(f"Failed to start POP3 honeypot: {e}")
+    # Check for the presence of an OpenAI API key before starting services
+    if not config.has_option('openai', 'api_key') or not validate_openai_key(config.get('openai', 'api_key')):
+        print("No valid A.I key found. Please run the configuration wizard to set up the necessary key.")
+        run_config_wizard()
+        return
 
     if args.smtp or args.pop3 or args.all:
-        logger.info("Reactor is running...")
-        reactor.run()
+        try:
+            logger.info(f"Starting GenAIPot Version {VERSION}")
+            if args.debug:
+                start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                logger.info(f"Start Time: {start_time}")
+                logger.info(f"IP: {config.get('server', 'ip', fallback='localhost')}")
+                logger.info(f"Listening Ports: {', '.join(['25', '110']) if args.all else ('25' if args.smtp else '110')}")
+                logger.info(f"SQLite Logging Enabled: {config.getboolean('logging', 'sqlite', fallback=True)}")
+                logger.info(f"Server Technology: {config.get('server', 'technology', fallback='generic')}")
+                logger.info(f"Domain Name: {config.get('server', 'domain', fallback='localhost')}")
+                logging.getLogger('urllib3').setLevel(logging.DEBUG)
+
+            if args.smtp or args.all:
+                smtp_factory = SMTPFactory()
+                reactor.listenTCP(25, smtp_factory)
+                logger.info("SMTP honeypot started on port 25")
+
+            if args.pop3 or args.all:
+                pop3_factory = POP3Factory(debug=args.debug)
+                reactor.listenTCP(110, pop3_factory)
+                logger.info("POP3 honeypot started on port 110")
+
+            logger.info("Reactor is running...")
+            reactor.run()
+        except Exception as e:
+            logger.error(f"Failed to start honeypot: {e}")
+
     else:
         parser.print_help()
 
