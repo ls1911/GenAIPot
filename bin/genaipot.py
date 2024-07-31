@@ -109,8 +109,7 @@ def run_config_wizard():
                 #with open('config.ini', 'w') as configfile:
                 #    config.write(configfile)
                 config_dst = os.path.join('etc/', 'config.ini')
-                config_src = os.path.join('var/no_ai', 'config.ini')
-                print (config_src)
+                config_src = os.path.join('var/no_ai', 'config.ini')                
                 if os.path.exists(config_src):
                     shutil.copyfile(config_src, config_dst)
                     print("Default template files have been used.")
