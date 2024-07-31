@@ -2,7 +2,6 @@ import logging
 from twisted.protocols.basic import LineReceiver
 from twisted.internet import protocol
 from pop3.pop3_utils import generate_email_headers
-from ai_services import AIService
 from database import log_interaction
 import configparser
 import os
@@ -18,7 +17,6 @@ technology = config.get('server', 'technology', fallback='generic')
 class POP3Protocol(LineReceiver):
     def __init__(self, debug=False):
         self.ip = None
-        self.ai_service = AIService()
         self.responses = self.load_responses()
         self.state = 'AUTHORIZATION'
         self.user = None
