@@ -43,7 +43,7 @@ jobs:
           pip install mkdocstrings mkdocstrings[python]
 
       - name: Build the MkDocs site
-        run: mkdocs build --site-dir pages
+        run: mkdocs build --site-dir docs
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
