@@ -62,6 +62,8 @@ def validate_openai_key(api_key):
         openai.Engine.list()
         spinner = Halo(text="API key is valid.", spinner='dots')
         spinner.start()
+        with open('etc/config.ini', 'w') as configfile:
+            config.write(configfile)
         spinner.stop_and_persist(symbol='🦄'.encode('utf-8'))
         print("---------------------------------------")
         return True
