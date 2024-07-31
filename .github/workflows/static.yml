@@ -42,6 +42,11 @@ jobs:
           pip install mkdocs mkdocs-material
           pip install mkdocstrings mkdocstrings[python]
 
+      - name: Set PYTHONPATH
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)/src:$(pwd)/bin
+        shell: bash
+
       - name: Build the MkDocs site
         run: mkdocs build --site-dir pages
 
