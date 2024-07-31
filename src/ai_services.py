@@ -16,17 +16,15 @@ config = configparser.ConfigParser()
 config.read(config_file_path)
 
 class AIService:
-    def __init__(self, debug_mode=False):
+    def __init__(self, api_key, debug_mode=False):
         self.technology = config.get('server', 'technology', fallback='generic')
         self.domain = config.get('server', 'domain', fallback='localhost')
         self.segment = config.get('server', 'segment', fallback='general')
         self.anonymous_access = config.getboolean('server', 'anonymous_access', fallback=False)
+        
+        openai.api_key = api_key  # Set the API key directly
 
-        if not config.has_section('openai'):
-            config.add_section('openai')
-            print ("no")
-
-        openai.api_key = config['openai']['api_key']
+#        openai.api_key = config['openai']['api_key']
         self.debug_mode = debug_mode
 
         if self.debug_mode:

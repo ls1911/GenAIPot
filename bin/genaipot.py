@@ -60,10 +60,9 @@ def validate_openai_key(api_key):
     try:
         # Attempt a simple API request to verify the key
         openai.Engine.list()
+
         spinner = Halo(text="API key is valid.", spinner='dots')
         spinner.start()
-        with open('etc/config.ini', 'w') as configfile:
-            config.write(configfile)
         spinner.stop_and_persist(symbol='🦄'.encode('utf-8'))
         print("---------------------------------------")
         return True
@@ -175,13 +174,13 @@ def run_config_wizard():
 
         spinner.succeed("Configuration has been saved successfully.")
 
-    logger.info("Configuration has been updated.")
+
     print("Configuration has been saved.")
 
     # Generate responses and sample emails using the AI service
-    query_ai_service_for_responses(technology, segment, domain, anonymous_access, args.debug)
+    query_ai_service_for_responses(technology, segment, domain, anonymous_access, args.debug,openai_key)
 
-def query_ai_service_for_responses(technology, segment, domain, anonymous_access, debug_mode):
+def query_ai_service_for_responses(technology, segment, domain, anonymous_access, debug_mode,api_key):
     """
     Query the AI service for SMTP and POP3 responses and sample emails.
 
@@ -192,7 +191,7 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
         anonymous_access (bool): Whether anonymous access is allowed.
         debug_mode (bool): Whether to enable debug mode.
     """
-    ai_service = AIService(debug_mode=debug_mode)
+    ai_service = AIService(api_key=api_key, debug_mode=debug_mode)
 
     # Load prompts from prompts.ini
     smtp_prompt = prompts.get('Prompts', 'smtp_prompt').format(technology=technology)
