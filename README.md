@@ -23,6 +23,11 @@ It integrates AI-generated responses to provide dynamic and customizable email c
 
 GenAIPot POP3 Server provides a robust implementation of the POP3 and SMTP protocols, allowing users to interact with an AI-driven email service. The server can serve AI-generated email content and provide responses to POP3 commands, simulating a real-world email server environment. It also includes analytics capabilities for monitoring server activity and detecting anomalies.
 
+## Docker (basic/default) Usage Example
+
+Here's a demo of the tool in action:
+
+[![asciicast](https://asciinema.org/a/ZsS47rhL5316CTZLAnwtz4hhy.svg)](https://asciinema.org/a/ZsS47rhL5316CTZLAnwtz4hhy)
 
 ## Installation
 
