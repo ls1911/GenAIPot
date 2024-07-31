@@ -54,7 +54,7 @@ pip install -r requirements.txt
 Create a configuration file or run the app with --config
 
 ```
-python3 main.py --config
+python3 bin/genaipot.py --config
 ```
 
 > Dont forget to configure OpenAI keys in the config.ini file if you want to use AI

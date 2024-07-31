@@ -58,7 +58,7 @@ The server uses a configuration file named config.ini for setting up various par
 
 To start the server with configuration wizard, use:
 ```
-python3 main.py –config
+python3 bin/genaipot.py –config
 ```
 
 This allows for flexible configuration management, making it easy to switch between different environments or settings, 

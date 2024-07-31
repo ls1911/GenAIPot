@@ -4,17 +4,17 @@ Start the application using:
 
 POP3 Server Only
 ```
-python3 main.py --pop3
+python3 bin/genaipot.py --pop3
 ```
 
 SMTP Server Only
 ```
-python3 main.py --smtp
+python3 bin/genaipot.py --smtp
 ```
 
 Both protocols
 ```
-python3 main.py --all
+python3 bin/genaipot.py --all
 ```
 
 ## Docker
