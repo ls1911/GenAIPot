@@ -3,6 +3,7 @@
 
 ![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-green?style=plastic)
 ![Python Version](https://img.shields.io/badge/python-3.12%2B-blue?style=flat-square)
+[![Deploy static content to Pages](https://github.com/ls1911/GenAIPot/actions/workflows/static.yml/badge.svg)](https://github.com/ls1911/GenAIPot/actions/workflows/static.yml)
 ![Coverage](https://img.shields.io/badge/build-pass-blue)
 
 
