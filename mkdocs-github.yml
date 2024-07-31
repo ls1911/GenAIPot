@@ -1,12 +1,10 @@
-site_name: GenAIPot Documentation - Custom Build
-site_dir: pages  # Specify the output directory
-
+site_name: GenAIPot Documentation
 theme:
   name: material
   language: en
   palette:
-    primary: 'blue'
-    accent: 'pink'
+    primary: 'indigo'
+    accent: 'indigo'
   font:
     text: Roboto
     code: Roboto Mono
@@ -17,8 +15,8 @@ nav:
   - Home: index.md
   - Installation: installation.md
   - Usage: usage.md
-  - Code Reference:
-      - Main: reference/genaipot.md
+  - API Reference:
+      - Main: reference/main.md
       - SMTP Protocol: reference/smtp_protocol.md
       - POP3 Module:
           - POP3 Protocol: reference/pop3/pop3_protocol.md
@@ -34,7 +32,7 @@ plugins:
       handlers:
         python:
           options:
-            paths: ["src", "bin"]
+            paths: ["src","bin"]
             show_root_heading: true
             show_source: true
 
