@@ -92,20 +92,33 @@ def run_config_wizard():
                 exit(1)
             else:
                 # Copy default files from var/no_ai to files/
+                    # Check if the source directory exists
+
                 if not os.path.exists('files'):
                     os.makedirs('files')
                 for filename in os.listdir('var/no_ai'):
                     src_path = os.path.join('var/no_ai', filename)
                     dst_path = os.path.join('files', filename)
                     shutil.copyfile(src_path, dst_path)
+                    if not os.path.exists(src_path):
+                        print(f"Source directory does not exist: {src_path}")
+
 
                 # Update the config file to reflect the use of default templates
                 #config.set('openai', 'api_key', 'no_ai')
                 #with open('config.ini', 'w') as configfile:
                 #    config.write(configfile)
+                config_dst = os.path.join('etc/', 'config.ini')
+                config_src = os.path.join('var/no_ai', 'config.ini')
+                print (config_src)
+                if os.path.exists(config_src):
+                    shutil.copyfile(config_src, config_dst)
+                    print("Default template files have been used.")
+                else:
+                    print(f"Config file not found at {config_src}")
+
+
                 
-                shutil.copyfile('var/no_ai/config.ini', 'etc/config.ini')
-                print("Default template files have been used.")
                 return
 
         spinner.succeed("A.I key verified successfully.")
