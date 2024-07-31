@@ -42,19 +42,15 @@ jobs:
           pip install mkdocs mkdocs-material
           pip install mkdocstrings mkdocstrings[python]
 
-      - name: Set PYTHONPATH
+      - name: Build the MkDocs site
         run: |
           export PYTHONPATH=$PYTHONPATH:$(pwd)/src:$(pwd)/bin
-        shell: bash
-
-      - name: Build the MkDocs site
-        run: mkdocs build --site-dir pages
+          mkdocs build --site-dir pages
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload the output files from the 'pages/' directory
-          path: 'docs/'
+          path: 'pages/'
 
       - name: Deploy to GitHub Pages
         id: deployment
