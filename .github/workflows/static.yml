@@ -43,13 +43,13 @@ jobs:
           pip install mkdocstrings mkdocstrings[python]
 
       - name: Build the MkDocs site
-        run: mkdocs build --site-dir docs
+        run: mkdocs build --site-dir pages
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           # Upload the output files from the 'pages/' directory
-          path: 'pages/'
+          path: 'docs/'
 
       - name: Deploy to GitHub Pages
         id: deployment
