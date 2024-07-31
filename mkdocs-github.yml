@@ -1,0 +1,52 @@
+site_name: GenAIPot Documentation - Custom Build
+site_dir: pages  # Specify the output directory
+
+theme:
+  name: material
+  language: en
+  palette:
+    primary: 'blue'
+    accent: 'pink'
+  font:
+    text: Roboto
+    code: Roboto Mono
+  logo: images/abc.png
+  favicon: images/favicon.ico
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Usage: usage.md
+  - Code Reference:
+      - Main: reference/genaipot.md
+      - SMTP Protocol: reference/smtp_protocol.md
+      - POP3 Module:
+          - POP3 Protocol: reference/pop3/pop3_protocol.md
+          - POP3 States: reference/pop3/pop3_states.md
+          - POP3 Utils: reference/pop3/pop3_utils.md
+      - AI Services: reference/ai_services.md
+      - Auth: reference/auth.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            paths: ["src", "bin"]
+            show_root_heading: true
+            show_source: true
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - footnotes
+  - meta
+  - toc:
+      permalink: true
+
+extra_css:
+  - stylesheets/extra.css
+extra_javascript:
+  - javascripts/extra.js
