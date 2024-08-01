@@ -19,7 +19,8 @@
 #
 
 """
-This module provides utilities for handling JSON data, particularly for extracting and cleaning JSON from text.
+This module provides utilities for handling JSON data, particularly for 
+extracting and cleaning JSON from text.
 """
 
 import json
@@ -31,7 +32,8 @@ def extract_and_clean_json(text):
     """
     Extract and clean JSON data from a given text.
 
-    This function tries to find a JSON block within a text string, extract it, and convert it to a Python dictionary.
+    This function tries to find a JSON block within a text string, 
+    extract it, and convert it to a Python dictionary.
 
     Args:
         text (str): The input text potentially containing JSON data.
@@ -48,7 +50,7 @@ def extract_and_clean_json(text):
         end = text.rfind('}') + 1
         if start == -1 or end == 0:
             raise ValueError("No JSON content found")
-        
+
         json_text = text[start:end]
         
         # Check if extracted text is valid JSON
