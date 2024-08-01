@@ -17,22 +17,6 @@
 #
 # For more information, visit: www.nucleon.sh or send email to contact[@]nucleon.sh
 #
-"""
-Module: ai_services
-
-This module provides various AI-related services, including integrations with external AI APIs 
-such as OpenAI. It includes classes and functions for handling requests, processing data, 
-and interacting with AI models.
-
-Classes:
-    - ClassName: Brief description of the class.
-
-Functions:
-    - function_name: Brief description of the function.
-
-Author: Mama
-Date: 01-08-24
-"""
 
 import openai
 import configparser
@@ -90,19 +74,20 @@ class AIService:
                     logger.error(f"Error querying OpenAI (attempt {attempt+1}/2): {e}")
                 if attempt == 1:
                     logger.critical("Failed to communicate with AI after 2 attempts. Exiting.")
-                    sys.exit(1)
+                    sys.exit()
                 time.sleep(1)
+        return()
 
     def _save_raw_response(self, response_text, response_type):
         filename = f'files/{response_type}_raw_response.txt'
-        with open(filename, 'w') as f:
+        with open(filename, 'w',encoding='utf-8') as f:
             f.write(response_text)
         if self.debug_mode:
             logger.debug(f"Raw response saved in {filename}")
 
     def _store_responses(self, responses, response_type):
         filename = f'files/{response_type}_responses.json'
-        with open(filename, 'w') as f:
+        with open(filename, 'w',encoding='utf-8') as f:
             json.dump(responses, f)
         if self.debug_mode:
             logger.debug(f"Responses stored in {filename}")
@@ -110,7 +95,7 @@ class AIService:
     def load_responses(self, response_type):
         filename = f'files/{response_type}_raw_response.txt'
         if os.path.exists(filename):
-            with open(filename, 'r') as f:
+            with open(filename, 'r',encoding='utf-8') as f:
                 return f.read()
         return "No responses available"
 
@@ -150,7 +135,7 @@ class AIService:
 
             # Save the raw response to a file
             filename = f'files/email{email_num}_raw_response.txt'
-            with open(filename, 'w') as f:
+            with open(filename, 'w',encoding='utf-8') as f:
                 f.write(response_text)
             if self.debug_mode:
                 logger.debug(f"Raw response saved in {filename}")
@@ -170,35 +155,36 @@ class AIService:
             email_num (int): The email number identifier.
         """
         filename = f'files/email_email{email_num}.json'
-        with open(filename, 'w') as f:
+        with open(filename, 'w',encoding='utf-8') as f:
             json.dump(responses, f)
         if self.debug_mode:
             logger.debug(f"Email {email_num} response stored in {filename}")
 
     def update_config_technology(self, technology):
         config.set('server', 'technology', technology)
-        with open('config.ini', 'w') as configfile:
+        with open('config.ini', 'w',encoding='utf-8') as configfile:
             config.write(configfile)
         if self.debug_mode:
             logger.debug(f"Config file updated with technology: {technology}")
 
     def update_config_segment(self, segment):
         config.set('server', 'segment', segment)
-        with open('config.ini', 'w') as configfile:
+        with open('config.ini', 'w',encoding='utf-8') as configfile:
             config.write(configfile)
         if self.debug_mode:
             logger.debug(f"Config file updated with segment: {segment}")
 
     def update_config_domain(self, domain):
         config.set('server', 'domain', domain)
-        with open('config.ini', 'w') as configfile:
+        with open('config.ini', 'w',encoding='utf-8') as configfile:
             config.write(configfile)
         if self.debug_mode:
             logger.debug(f"Config file updated with domain: {domain}")
 
     def update_config_anonymous_access(self, anonymous_access):
         config.set('server', 'anonymous_access', str(anonymous_access))
-        with open('config.ini', 'w') as configfile:
+        with open('config.ini', 'w',encoding='utf-8') as configfile:
             config.write(configfile)
         if self.debug_mode:
             logger.debug(f"Config file updated with anonymous access: {anonymous_access}")
+
