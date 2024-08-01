@@ -52,7 +52,7 @@ def extract_and_clean_json(text):
             raise ValueError("No JSON content found")
 
         json_text = text[start:end]
-        
+
         # Check if extracted text is valid JSON
         try:
             data = json.loads(json_text)
