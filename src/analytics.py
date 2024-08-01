@@ -18,13 +18,27 @@
 # For more information, visit: www.nucleon.sh or send email to contact[@]nucleon.sh
 #
 
+"""
+This module provides functions for analyzing command data, detecting anomalies, 
+and generating graphs for visualization in GenAIPot.
+"""
+
+from datetime import datetime, timedelta
 import pandas as pd
 import matplotlib.pyplot as plt
 from prophet import Prophet
-from datetime import datetime, timedelta
 
 def perform_prediction(df):
-    df['y'] = df['command'].apply(lambda x: len(x))
+    """
+    Perform predictions on the length of commands over time using Prophet.
+
+    Args:
+        df (DataFrame): DataFrame containing 'timestamp' and 'command' columns.
+
+    Returns:
+        None
+    """
+    df['y'] = df['command'].str.len()
     df['ds'] = pd.to_datetime(df['timestamp'])
     df = df[['ds', 'y']]
 
@@ -37,7 +51,16 @@ def perform_prediction(df):
     print("Prediction complete. Results saved to future_forecast.csv")
 
 def detect_anomalies(df):
-    df['y'] = df['command'].apply(lambda x: len(x))
+    """
+    Detect anomalies in the command lengths and IP address connection frequencies.
+
+    Args:
+        df (DataFrame): DataFrame containing 'timestamp', 'command', and 'ip' columns.
+
+    Returns:
+        None
+    """
+    df['y'] = df['command'].str.len()
     df['ds'] = pd.to_datetime(df['timestamp'])
     df = df[['ds', 'y']]
 
@@ -51,8 +74,8 @@ def detect_anomalies(df):
     forecast.to_csv("command_forecast.csv", index=False)
 
     df_ip = df.groupby('ip').size().reset_index(name='counts')
-    df_ip['ds'] = pd.to_datetime(df_ip['ip'])
-    df_ip = df_ip[['ds', 'counts']]
+    df_ip['ds'] = pd.to_datetime(df_ip['ip'], errors='coerce')
+    df_ip = df_ip.dropna().reset_index(drop=True)  # Drop rows with NaT ds values
 
     model = Prophet()
     model.fit(df_ip)
@@ -66,6 +89,15 @@ def detect_anomalies(df):
     print("Anomaly detection complete. Results saved to command_anomalies.csv, command_forecast.csv, ip_anomalies.csv, and ip_forecast.csv")
 
 def generate_graphs(df):
+    """
+    Generate and save graphs for top connected IPs and connections over the last 24 hours.
+
+    Args:
+        df (DataFrame): DataFrame containing 'ip' and 'timestamp' columns.
+
+    Returns:
+        None
+    """
     top_ips = df['ip'].value_counts().head(10)
     print("Top 10 most connected IP addresses:")
     print(top_ips)
