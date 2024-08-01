@@ -19,8 +19,8 @@
 #
 
 """
-This module provides utilities for handling JSON data, particularly for 
-extracting and cleaning JSON from text.
+This module provides utilities for handling JSON data, 
+particularly for extracting and cleaning JSON from text.
 """
 
 import json
