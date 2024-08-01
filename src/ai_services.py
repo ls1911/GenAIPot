@@ -17,6 +17,22 @@
 #
 # For more information, visit: www.nucleon.sh or send email to contact[@]nucleon.sh
 #
+"""
+Module: ai_services
+
+This module provides various AI-related services, including integrations with external AI APIs 
+such as OpenAI. It includes classes and functions for handling requests, processing data, 
+and interacting with AI models.
+
+Classes:
+    - ClassName: Brief description of the class.
+
+Functions:
+    - function_name: Brief description of the function.
+
+Author: Mama
+Date: 01-08-24
+"""
 
 import openai
 import configparser
@@ -31,7 +47,7 @@ logging.basicConfig(level=logging.ERROR)  # Default to ERROR level
 #config = configparser.ConfigParser()
 #config.read('../etc/config.ini')
         # Read config file
-config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'config.ini'))
+config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','etc','config.ini'))
 config = configparser.ConfigParser()
 config.read(config_file_path)
 
@@ -41,17 +57,16 @@ class AIService:
         self.domain = config.get('server', 'domain', fallback='localhost')
         self.segment = config.get('server', 'segment', fallback='general')
         self.anonymous_access = config.getboolean('server', 'anonymous_access', fallback=False)
-        
+
         openai.api_key = api_key  # Set the API key directly
 
-#        openai.api_key = config['openai']['api_key']
         self.debug_mode = debug_mode
 
         if self.debug_mode:
             logging.getLogger('ai_services').setLevel(logging.DEBUG)
             logging.getLogger('urllib3').setLevel(logging.DEBUG)
         else:
-            logging.getLogger('ai_services').setLevel(logging.CRITICAL)  # Suppress errors in non-debug mode
+            logging.getLogger('ai_services').setLevel(logging.CRITICAL)
             logging.getLogger('urllib3').setLevel(logging.CRITICAL)
 
     def query_responses(self, prompt, response_type):
@@ -75,7 +90,7 @@ class AIService:
                     logger.error(f"Error querying OpenAI (attempt {attempt+1}/2): {e}")
                 if attempt == 1:
                     logger.critical("Failed to communicate with AI after 2 attempts. Exiting.")
-                    exit(1)
+                    sys.exit(1)
                 time.sleep(1)
 
     def _save_raw_response(self, response_text, response_type):
