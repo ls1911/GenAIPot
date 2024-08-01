@@ -19,7 +19,8 @@
 #
 
 """
-This module provides authentication utilities for GenAIPot, including password hashing and credential checking.
+This module provides authentication utilities for GenAIPot, 
+including password hashing and credential checking.
 """
 
 import hashlib
@@ -59,7 +60,7 @@ def check_credentials(username, password):
 
     # Hash the provided password to compare with stored hash
     hashed_password = hash_password(password)
-    
+
     if config.getboolean('server', 'debug', fallback=False):
         logger.debug("Checking credentials for user: %s", username)
         logger.debug("Provided password (hashed): %s", hashed_password)
