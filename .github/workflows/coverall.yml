@@ -29,6 +29,8 @@ jobs:
       run: echo "PYTHONPATH=$(pwd)/src" >> $GITHUB_ENV
 
     - name: Run tests with coverage
+      env:
+        PYTHONPATH: src  # Ensure PYTHONPATH includes the src directory
       run: |
         pytest --cov=src --cov-report=term-missing --cov-report=xml
 
