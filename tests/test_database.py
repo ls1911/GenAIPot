@@ -1,8 +1,22 @@
+import os
+import sys
+import pandas as pd
+
+# Add the src directory to the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+
 import unittest
 from unittest.mock import patch, MagicMock
-import pandas as pd
-from datetime import datetime
 from src import database
+
+
+from datetime import datetime
+
+# Add the src directory to the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+
+from src import database  # or any other import from src
+from unittest.mock import patch, MagicMock
 
 class TestDatabase(unittest.TestCase):
     @patch('sqlite3.connect')
