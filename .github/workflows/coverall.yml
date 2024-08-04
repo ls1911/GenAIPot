@@ -25,9 +25,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install pytest pytest-cov coveralls pandas prophet
 
-    - name: Set up PYTHONPATH
-      run: |
-        echo "PYTHONPATH=$(pwd)/src" >> $GITHUB_ENV
+    - name: Set PYTHONPATH
+      run: echo "PYTHONPATH=$(pwd)/src" >> $GITHUB_ENV
 
     - name: Run tests with coverage
       run: |
