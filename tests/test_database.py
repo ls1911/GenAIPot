@@ -1,22 +1,14 @@
 import os
 import sys
 import pandas as pd
-
-# Add the src directory to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
-
 import unittest
 from unittest.mock import patch, MagicMock
-from src import database
-
-
 from datetime import datetime
 
 # Add the src directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
-from src import database  # or any other import from src
-from unittest.mock import patch, MagicMock
+from src import database
 
 class TestDatabase(unittest.TestCase):
     @patch('sqlite3.connect')
@@ -46,7 +38,7 @@ class TestDatabase(unittest.TestCase):
             command TEXT,
             response TEXT
         )
-    '''
+        '''
         actual_call = self.mock_cursor.execute.call_args[0][0].strip()
         self.assertEqual(expected_call.strip(), actual_call)
         self.mock_conn.commit.assert_called_once()
@@ -64,8 +56,7 @@ class TestDatabase(unittest.TestCase):
             database.log_interaction(ip, command, response)
 
         # Check that the correct SQL command was executed with the expected data
-        calls = [
-            unittest.mock.call('''
+        expected_create_table_call = '''
         CREATE TABLE IF NOT EXISTS connections (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             ip TEXT,
@@ -73,11 +64,18 @@ class TestDatabase(unittest.TestCase):
             command TEXT,
             response TEXT
         )
-    '''),
-            unittest.mock.call('INSERT INTO connections (ip, timestamp, command, response) VALUES (?, ?, ?, ?)',
-                               (ip, test_time, command, response))
-        ]
-        self.mock_cursor.execute.assert_has_calls(calls, any_order=False)
+        '''.strip()
+
+        expected_insert_call = 'INSERT INTO connections (ip, timestamp, command, response) VALUES (?, ?, ?, ?)'
+        expected_insert_data = (ip, test_time, command, response)
+
+        actual_create_table_call = self.mock_cursor.execute.call_args_list[0][0][0].strip()
+        actual_insert_call = self.mock_cursor.execute.call_args_list[1][0][0]
+        actual_insert_data = self.mock_cursor.execute.call_args_list[1][0][1]
+
+        self.assertEqual(expected_create_table_call, actual_create_table_call)
+        self.assertEqual(expected_insert_call, actual_insert_call)
+        self.assertEqual(expected_insert_data, actual_insert_data)
         self.mock_conn.commit.assert_called()
 
     @patch('pandas.read_sql_query')
