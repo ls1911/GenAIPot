@@ -1,14 +1,14 @@
 import os
 import sys
-import pandas as pd
 import unittest
 from unittest.mock import patch, MagicMock
 from datetime import datetime
+import pandas as pd
 
 # Add the src directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
-import database
+from src import database
 
 class TestDatabase(unittest.TestCase):
     @patch('sqlite3.connect')
@@ -43,17 +43,17 @@ class TestDatabase(unittest.TestCase):
         self.assertEqual(expected_call.strip(), actual_call)
         self.mock_conn.commit.assert_called_once()
 
-    def test_log_interaction(self):
+    @patch('src.database.datetime')
+    def test_log_interaction(self, mock_datetime):
         # Define test data
         ip = '192.168.1.1'
         command = 'TEST COMMAND'
         response = 'TEST RESPONSE'
-        test_time = datetime.now().isoformat()
+        test_time = datetime(2024, 8, 4, 10, 5, 57, 223946)
+        mock_datetime.now.return_value = test_time
 
-        with patch('src.database.datetime') as mock_datetime:
-            mock_datetime.now.return_value = datetime.fromisoformat(test_time)
-            # Call the function to log the interaction
-            database.log_interaction(ip, command, response)
+        # Call the function to log the interaction
+        database.log_interaction(ip, command, response)
 
         # Check that the correct SQL command was executed with the expected data
         expected_create_table_call = '''
@@ -67,7 +67,7 @@ class TestDatabase(unittest.TestCase):
         '''.strip()
 
         expected_insert_call = 'INSERT INTO connections (ip, timestamp, command, response) VALUES (?, ?, ?, ?)'
-        expected_insert_data = (ip, test_time, command, response)
+        expected_insert_data = (ip, test_time.isoformat(), command, response)
 
         actual_create_table_call = self.mock_cursor.execute.call_args_list[0][0][0].strip()
         actual_insert_call = self.mock_cursor.execute.call_args_list[1][0][0]
