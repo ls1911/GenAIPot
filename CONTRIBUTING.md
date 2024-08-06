@@ -14,16 +14,16 @@ Provide as much detail as possible to help us understand and address the issue.
 
 We welcome pull requests for bug fixes, new features, and improvements. To submit a pull request:
 
-	1.	Fork the Repository:
-	•	Click the “Fork” button at the top right of the repository page.
-	2.	Clone Your Fork:
- 	3.	Create a New Branch:
-  4.	Make Your Changes:
-	•	Follow the coding style and conventions used in the project.
-	•	Ensure your code is well-documented and includes comments where necessary.
-	5.	Commit Your Changes:
-	6.	Push to Your Fork:
-	7.	Open a Pull Request:
+	1.	Fork the Repository
+		•	Click the “Fork” button at the top right of the repository page.
+	2.	Clone Your Fork
+ 	3.	Create a New Branch
+  	4.	Make Your Changes
+		•	Follow the coding style and conventions used in the project.
+		•	Ensure your code is well-documented and includes comments where necessary.
+	5.	Commit Your Changes
+	6.	Push to Your Fork
+	7.	Open a Pull Request
 
 ## Code Style and Guidelines
 
