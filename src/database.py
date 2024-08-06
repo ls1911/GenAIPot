@@ -18,14 +18,27 @@
 # For more information, visit: www.nucleon.sh or send email to contact[@]nucleon.sh
 #
 
+"""
+This module handles interactions with the SQLite database for the GenAIPot project.
+
+It includes functions for setting up the database, logging interactions, and collecting data.
+"""
+
 import sqlite3
 from datetime import datetime
 import pandas as pd
 
+# Establishing the database connection and cursor
 conn = sqlite3.connect('GenAIPot.db')
 c = conn.cursor()
 
 def setup_database():
+    """
+    Set up the database by creating the 'connections' table if it does not already exist.
+
+    The 'connections' table logs interactions with the honeypot, including IP address, timestamp,
+    command issued, and the response provided.
+    """
     c.execute('''
         CREATE TABLE IF NOT EXISTS connections (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,9 +51,25 @@ def setup_database():
     conn.commit()
 
 def log_interaction(ip, command, response):
+    """
+    Log an interaction with the honeypot to the database.
+
+    Args:
+        ip (str): The IP address of the entity interacting with the honeypot.
+        command (str): The command issued by the entity.
+        response (str): The response provided by the honeypot.
+    """
     c.execute('INSERT INTO connections (ip, timestamp, command, response) VALUES (?, ?, ?, ?)',
               (ip, datetime.now().isoformat(), command, response))
     conn.commit()
 
 def collect_honeypot_data():
+    """
+    Collect all data from the 'connections' table.
+
+    Returns:
+        pandas.DataFrame: A DataFrame containing all logged interactions with the honeypot.
+    """
     return pd.read_sql_query("SELECT * FROM connections", conn)
+
+# Ensure to add a final newline at the end of the file

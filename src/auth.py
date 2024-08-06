@@ -18,6 +18,11 @@
 # For more information, visit: www.nucleon.sh or send email to contact[@]nucleon.sh
 #
 
+"""
+This module provides authentication utilities for GenAIPot, 
+including password hashing and credential checking.
+"""
+
 import hashlib
 import logging
 import configparser
@@ -29,27 +34,39 @@ logger = logging.getLogger(__name__)
 
 def hash_password(password):
     """
-    Hash the provided password using a secure hashing algorithm.
+    Hash the provided password using SHA-256.
+
+    Args:
+        password (str): The password to hash.
+
+    Returns:
+        str: The hashed password.
     """
     return hashlib.sha256(password.encode()).hexdigest()
 
 def check_credentials(username, password):
     """
     Check if the provided credentials match the stored credentials.
+
+    Args:
+        username (str): The username to check.
+        password (str): The password to check.
+
+    Returns:
+        bool: True if the credentials match, False otherwise.
     """
     stored_username = config.get('server', 'username')
     stored_password = config.get('server', 'password')  # This is the hashed password
 
     # Hash the provided password to compare with stored hash
     hashed_password = hash_password(password)
-    
-    if config.getboolean('server', 'debug', fallback=False):
-        logger.debug(f"Checking credentials for user: {username}")
-        logger.debug(f"Provided password (hashed): {hashed_password}")
-        logger.debug(f"Stored username: {stored_username}")
-        logger.debug(f"Stored password (hashed): {stored_password}")
 
-    if username == stored_username and hashed_password == stored_password:
-        return True
-    else:
-        return False
+    if config.getboolean('server', 'debug', fallback=False):
+        logger.debug("Checking credentials for user: %s", username)
+        logger.debug("Provided password (hashed): %s", hashed_password)
+        logger.debug("Stored username: %s", stored_username)
+        logger.debug("Stored password (hashed): %s", stored_password)
+
+    return username == stored_username and hashed_password == stored_password
+
+# Ensure to add a final newline at the end of the file

@@ -4,6 +4,7 @@
 ![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-green?style=plastic)
 ![Python Version](https://img.shields.io/badge/python-3.12%2B-blue?style=flat-square)
 [![Deploy static content to Pages](https://github.com/ls1911/GenAIPot/actions/workflows/static.yml/badge.svg)](https://github.com/ls1911/GenAIPot/actions/workflows/static.yml)
+![Lint with Pylint](https://github.com/ls1911/GenAIPot/actions/workflows/lint.yml/badge.svg)
 ![Coverage](https://img.shields.io/badge/build-pass-blue)
 
 
@@ -59,7 +60,7 @@ The server uses a configuration file named config.ini for setting up various par
 
 To start the server with configuration wizard, use:
 ```
-python3 bin/genaipot.py –config
+python3 bin/genaipot.py –-config
 ```
 
 This allows for flexible configuration management, making it easy to switch between different environments or settings, 

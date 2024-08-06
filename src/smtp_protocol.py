@@ -19,6 +19,7 @@
 #
 
 import logging
+import json
 from twisted.protocols.basic import LineReceiver
 from twisted.internet import protocol
 from ai_services import AIService
@@ -162,31 +163,36 @@ class SMTPProtocol(LineReceiver):
             This method should be implemented to actually decode base64 responses. Currently, it returns a placeholder.
         """
         return "username"  # Replace this with actual base64 decoding logic
-
+    
     def _format_responses(self, responses):
-        """
-        Format the loaded responses into a dictionary.
+     """
+     Format the loaded responses into a dictionary.
 
-        Args:
-            responses (list): The list of responses from the AI service.
+     Args:
+        responses (dict): The dictionary of responses from the AI service.
 
-        Returns:
-            dict: The formatted responses as a dictionary.
-        """
-        if isinstance(responses, list):
-            formatted_responses = {}
-            for item in responses:
-                if isinstance(item, dict):
-                    code = item.get('response_code')
-                    description = item.get('description')
-                    if code and description:
-                        formatted_responses[f"{code}"] = f"{code} {description}"
-                else:
-                    logger.error(f"Unexpected item format: {item}")
-            return formatted_responses
-        else:
-            logger.error(f"Unexpected responses format: {responses}")
-            return {}
+     Returns:
+        dict: The formatted responses as a dictionary.
+     """
+     is_valid=False
+     formatted_responses = {}
+     try:
+         responses=json.loads(responses)
+         is_valid=True
+     except json.JSONDecodeError:
+        is_valid=False
+
+     if is_valid and "SMTP_Responses" in responses:
+        for item in responses["SMTP_Responses"]:
+            code = item.get('code')
+            message = item.get('message')
+            if code and message:
+                formatted_responses[f"{code}"] = f"{code} {message}"
+     else:
+        logger.error(f"Unexpected responses format: {responses}")
+     return formatted_responses
+
+
 
 class SMTPFactory(protocol.Factory):
     """

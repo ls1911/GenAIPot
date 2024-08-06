@@ -18,29 +18,51 @@
 # For more information, visit: www.nucleon.sh or send email to contact[@]nucleon.sh
 #
 
+"""
+This module provides utilities for handling JSON data, 
+particularly for extracting and cleaning JSON from text.
+"""
+
 import json
 import logging
 
 logger = logging.getLogger(__name__)
 
 def extract_and_clean_json(text):
+    """
+    Extract and clean JSON data from a given text.
+
+    This function tries to find a JSON block within a text string, 
+    extract it, and convert it to a Python dictionary.
+
+    Args:
+        text (str): The input text potentially containing JSON data.
+
+    Returns:
+        dict: The extracted JSON data as a dictionary.
+
+    Raises:
+        ValueError: If no JSON content is found or the extracted text is not valid JSON.
+    """
     try:
         # Attempt to extract JSON block even if it's surrounded by additional text
         start = text.find('{')
         end = text.rfind('}') + 1
         if start == -1 or end == 0:
             raise ValueError("No JSON content found")
-        
+
         json_text = text[start:end]
-        
+
         # Check if extracted text is valid JSON
         try:
             data = json.loads(json_text)
             return data
         except json.JSONDecodeError as e:
-            logger.error(f"Error decoding JSON: {e}")
-            raise ValueError("Extracted text is not valid JSON")
+            logger.error("Error decoding JSON: %s", e)
+            raise ValueError("Extracted text is not valid JSON") from e
     except Exception as e:
-        logger.error(f"Error extracting JSON: {e}")
-        logger.debug(f"Raw text for cleanup: {text}")
-        raise ValueError("No JSON content found")
+        logger.error("Error extracting JSON: %s", e)
+        logger.debug("Raw text for cleanup: %s", text)
+        raise ValueError("No JSON content found") from e
+
+# Ensure to add a final newline at the end of the file

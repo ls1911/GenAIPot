@@ -18,13 +18,27 @@
 # For more information, visit: www.nucleon.sh or send email to contact[@]nucleon.sh
 #
 
+"""
+This module provides functions for analyzing command data, detecting anomalies, 
+and generating graphs for visualization in GenAIPot.
+"""
+
+from datetime import datetime, timedelta
 import pandas as pd
 import matplotlib.pyplot as plt
 from prophet import Prophet
-from datetime import datetime, timedelta
 
 def perform_prediction(df):
-    df['y'] = df['command'].apply(lambda x: len(x))
+    """
+    Perform predictions on the length of commands over time using Prophet.
+
+    Args:
+        df (DataFrame): DataFrame containing 'timestamp' and 'command' columns.
+
+    Returns:
+        None
+    """
+    df['y'] = df['command'].str.len()
     df['ds'] = pd.to_datetime(df['timestamp'])
     df = df[['ds', 'y']]
 
@@ -37,35 +51,65 @@ def perform_prediction(df):
     print("Prediction complete. Results saved to future_forecast.csv")
 
 def detect_anomalies(df):
-    df['y'] = df['command'].apply(lambda x: len(x))
+    """
+    Detect anomalies in the command lengths and IP address connection frequencies.
+
+    Args:
+        df (DataFrame): DataFrame containing 'timestamp', 'command', and 'ip' columns.
+
+    Returns:
+        None
+    """
+    # Ensure 'timestamp', 'command', and 'ip' columns are present
+    if not all(col in df.columns for col in ['timestamp', 'command', 'ip']):
+        raise ValueError("DataFrame must contain 'timestamp', 'command', and 'ip' columns")
+
+    # Prepare the DataFrame for command length anomaly detection
+    df['y'] = df['command'].str.len()
     df['ds'] = pd.to_datetime(df['timestamp'])
-    df = df[['ds', 'y']]
+    df_command = df[['ds', 'y']].copy()  # Use a copy to avoid SettingWithCopyWarning
 
-    model = Prophet()
-    model.fit(df)
-    future = model.make_future_dataframe(periods=30, freq='S')
-    forecast = model.predict(future)
+    model_command = Prophet()
+    model_command.fit(df_command)
+    future_command = model_command.make_future_dataframe(periods=30, freq='S')
+    forecast_command = model_command.predict(future_command)
 
-    df['anomaly'] = df['y'] > forecast['yhat_upper']
-    df.to_csv("command_anomalies.csv", index=False)
-    forecast.to_csv("command_forecast.csv", index=False)
+    # Align the indices of the DataFrame and forecast
+    forecast_command = forecast_command.set_index('ds').reindex(df_command['ds']).reset_index()
 
+    df_command['anomaly'] = df_command['y'] > forecast_command['yhat_upper']
+    df_command.to_csv("command_anomalies.csv", index=False)
+    forecast_command.to_csv("command_forecast.csv", index=False)
+
+    # Prepare the DataFrame for IP connection frequency anomaly detection
     df_ip = df.groupby('ip').size().reset_index(name='counts')
-    df_ip['ds'] = pd.to_datetime(df_ip['ip'])
-    df_ip = df_ip[['ds', 'counts']]
+    df_ip['ds'] = pd.to_datetime(df_ip['ip'], errors='coerce')
+    df_ip = df_ip.dropna().reset_index(drop=True)  # Drop rows with NaT ds values
 
-    model = Prophet()
-    model.fit(df_ip)
-    future = model.make_future_dataframe(periods=30, freq='D')
-    forecast = model.predict(future)
+    model_ip = Prophet()
+    model_ip.fit(df_ip)
+    future_ip = model_ip.make_future_dataframe(periods=30, freq='D')
+    forecast_ip = model_ip.predict(future_ip)
 
-    df_ip['anomaly'] = df_ip['counts'] > forecast['yhat_upper']
+    # Align the indices of the DataFrame and forecast
+    forecast_ip = forecast_ip.set_index('ds').reindex(df_ip['ds']).reset_index()
+
+    df_ip['anomaly'] = df_ip['counts'] > forecast_ip['yhat_upper']
     df_ip.to_csv("ip_anomalies.csv", index=False)
-    forecast.to_csv("ip_forecast.csv", index=False)
+    forecast_ip.to_csv("ip_forecast.csv", index=False)
 
     print("Anomaly detection complete. Results saved to command_anomalies.csv, command_forecast.csv, ip_anomalies.csv, and ip_forecast.csv")
-
+    
 def generate_graphs(df):
+    """
+    Generate and save graphs for top connected IPs and connections over the last 24 hours.
+
+    Args:
+        df (DataFrame): DataFrame containing 'ip' and 'timestamp' columns.
+
+    Returns:
+        None
+    """
     top_ips = df['ip'].value_counts().head(10)
     print("Top 10 most connected IP addresses:")
     print(top_ips)
