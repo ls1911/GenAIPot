@@ -66,7 +66,7 @@ prompts = configparser.ConfigParser()
 
 prompts.read(prompts_config_file_path)
 
-VERSION = "0.4.2"  # Incremented version number
+VERSION = "0.4.4"  # Incremented version number
 
 def ensure_files_directory():
     """Ensure the existence of the 'files' directory."""

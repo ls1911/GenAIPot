@@ -52,7 +52,7 @@ class AIService:
         debug_mode (bool): Flag for enabling debug mode.
     """
 
-    def __init__(self, api_key, debug_mode=False):
+    def __init__(self, api_key=False, debug_mode=False):
         """
         Initialize AIService with API key and debug mode setting.
 
