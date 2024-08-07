@@ -5,6 +5,7 @@
 ![Python Version](https://img.shields.io/badge/python-3.12%2B-blue?style=flat-square)
 [![Deploy static content to Pages](https://github.com/ls1911/GenAIPot/actions/workflows/static.yml/badge.svg)](https://github.com/ls1911/GenAIPot/actions/workflows/static.yml)
 ![Lint with Pylint](https://github.com/ls1911/GenAIPot/actions/workflows/lint.yml/badge.svg)
+[![Publish Docker image](https://github.com/ls1911/GenAIPot/actions/workflows/docker.yml/badge.svg)](https://github.com/ls1911/GenAIPot/actions/workflows/docker.yml)
 ![Coverage](https://img.shields.io/badge/build-pass-blue)
 
 
@@ -32,6 +33,14 @@ Here's a demo of the tool in action:
 
 
 ## Installation
+
+### Using PreMade Docker Image
+
+Read for use docker image is availble at docker hub
+```
+docker pull annls/genaipot:latest
+docker run -dp25:25 -p110:110 annls/genaipot
+```
 
 ### Prerequisites
 
