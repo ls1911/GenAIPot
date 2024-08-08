@@ -1,0 +1,33 @@
+name: Mint NFT
+
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: 'Email address of the user'
+        required: true
+        type: string
+
+jobs:
+  mint-nft:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Mint NFT
+        env:
+          API_URL: https://api.mintology.app/v1/${{ secrets.MINTOLOGY_PROJECT_ID }}/mint
+          API_KEY: ${{ secrets.MINTOLOGY_API_KEY }}
+          PREMINT_ID: ${{ secrets.MINTOLOGY_PREMINT_ID }}
+          EMAIL: ${{ github.event.inputs.email }}
+        run: |
+          curl -X POST "$API_URL" \
+            -H "accept: application/json" \
+            -H "content-type: application/json" \
+            -H "API-Key: $API_KEY" \
+            -d '{
+                  "email": "'"$EMAIL"'",
+                  "premint_id": "'"$PREMINT_ID"'"
+                }'
