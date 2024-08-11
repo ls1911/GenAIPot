@@ -1,6 +1,6 @@
-# Mint Your NFT Now !
+# Mint Your NFT Now!
 
-We will create wallet and mint the NFT to it, you will get details how to claim it by email.
+We will create a wallet and mint the NFT to it. You will get details on how to claim it by email.
 
 <form id="mintForm">
     <label for="email">Email:</label>
@@ -15,22 +15,27 @@ We will create wallet and mint the NFT to it, you will get details how to claim 
         event.preventDefault();
         const email = document.getElementById('email').value;
 
-        const response = await fetch('https://api.github.com/repos/ls1911/GenAIPot/actions/workflows/nft.yml/dispatches', {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/vnd.github.v3+json',
-                'Authorization': `token YOUR_GITHUB_PERSONAL_ACCESS_TOKEN`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                "ref": "main",
-                "inputs": {
-                    "email": email
-                }
-            })
-        });
+        try {
+            const response = await fetch('https://api.github.com/repos/ls1911/GenAIPot/actions/workflows/mint-nft.yml/dispatches', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/vnd.github.v3+json',
+                                    'Authorization': `token YOUR_GITHUB_PERSONAL_ACCESS_TOKEN`,
 
-        const result = await response.json();
-        document.getElementById('response').textContent = JSON.stringify(result, null, 2);
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "ref": "main",
+                    "inputs": {
+                        "email": email
+                    }
+                })
+            });
+
+            const result = await response.json();
+            document.getElementById('response').textContent = response.ok ? 'Minting request submitted successfully!' : 'Error: ' + result.message;
+        } catch (error) {
+            document.getElementById('response').textContent = `Request failed: ${error.message}`;
+        }
     });
 </script>
