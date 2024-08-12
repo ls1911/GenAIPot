@@ -173,3 +173,5 @@ def _handle_quit(protocol, command):
     protocol.transport.loseConnection()
     logger.debug("QUIT command received. Connection closing.")
     return response
+
+# Ensure to add a final newline at the end of the file
