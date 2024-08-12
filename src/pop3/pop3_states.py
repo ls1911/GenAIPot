@@ -175,4 +175,3 @@ def _handle_quit(protocol, command):
     return response
 
 # Ensure to add a final newline at the end of the file
-
