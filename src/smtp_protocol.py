@@ -43,7 +43,8 @@ class SMTPProtocol(LineReceiver):
         ip (str): The IP address of the connected client.
         ai_service (AIService): An instance of the AIService for loading and managing responses.
         responses (dict): A dictionary of SMTP responses loaded from the AI service.
-        state (str): The current state of the protocol, used to manage the flow of commands (e.g., INITIAL, DATA).
+        state (str): The current state of the protocol, used to manage the 
+        flow of commands (e.g., INITIAL, DATA).
         data_buffer (list): A buffer for storing lines of data received during the DATA state.
     """
 
@@ -160,12 +161,13 @@ class SMTPProtocol(LineReceiver):
             str: The decoded response (e.g., username or password).
 
         Note:
-            This method should be implemented to actually decode base64 responses. Currently, it returns a placeholder.
+            This method should be implemented to actually decode base64 responses. 
+            Currently, it returns a placeholder.
         """
         return "username"  # Replace this with actual base64 decoding logic
-    
+
     def _format_responses(self, responses):
-     """
+      """
      Format the loaded responses into a dictionary.
 
      Args:
@@ -193,7 +195,6 @@ class SMTPProtocol(LineReceiver):
      return formatted_responses
 
 
-
 class SMTPFactory(protocol.Factory):
     """
     A factory class for creating instances of SMTPProtocol.
@@ -217,3 +218,4 @@ class SMTPFactory(protocol.Factory):
         """
         logger.debug(f"Building SMTP protocol for {addr}")
         return SMTPProtocol()
+#

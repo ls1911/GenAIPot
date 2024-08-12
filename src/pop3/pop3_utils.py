@@ -144,3 +144,5 @@ def format_responses(responses):
     else:
         logger.error(f"Unexpected responses format: {responses}")
         return {}
+    
+    # Ensure to add a final newline at the end of the file

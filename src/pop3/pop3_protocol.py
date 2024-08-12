@@ -214,3 +214,5 @@ class POP3Factory(protocol.Factory):
         if self.debug:
             logging.basicConfig(level=logging.DEBUG)
         return POP3Protocol(debug=self.debug)
+    
+    # Ensure to add a final newline at the end of the file
