@@ -167,32 +167,32 @@ class SMTPProtocol(LineReceiver):
         return "username"  # Replace this with actual base64 decoding logic
 
     def _format_responses(self, responses):
-      """
-     Format the loaded responses into a dictionary.
+    """
+    Format the loaded responses into a dictionary.
 
-     Args:
+    Args:
         responses (dict): The dictionary of responses from the AI service.
 
-     Returns:
+    Returns:
         dict: The formatted responses as a dictionary.
-     """
-     is_valid=False
-     formatted_responses = {}
-     try:
-         responses=json.loads(responses)
-         is_valid=True
-     except json.JSONDecodeError:
-        is_valid=False
+    """
+    is_valid = False
+    formatted_responses = {}
+    try:
+        responses = json.loads(responses)
+        is_valid = True
+    except json.JSONDecodeError:
+        is_valid = False
 
-     if is_valid and "SMTP_Responses" in responses:
+    if is_valid and "SMTP_Responses" in responses:
         for item in responses["SMTP_Responses"]:
             code = item.get('code')
             message = item.get('message')
             if code and message:
                 formatted_responses[f"{code}"] = f"{code} {message}"
-     else:
+    else:
         logger.error(f"Unexpected responses format: {responses}")
-     return formatted_responses
+    return formatted_responses
 
 
 class SMTPFactory(protocol.Factory):
