@@ -18,10 +18,14 @@ jobs:
 
       - name: Mint NFT
         env:
-          API_URL: https://api.mintology.app/v1/${{ secrets.MINTOLOGY_PROJECT_ID }}/mint
-          API_KEY: ${{ secrets.MINTOLOGY_API_KEY }}
-          PREMINT_ID: ${{ secrets.MINTOLOGY_PREMINT_ID }}
+          API_URL: https://api.mintology.app/v1/01J57V9TV05AH9EBBH3S1HH4VV/mint
+          API_KEY: MDFKNTdUQ0Y3NUtERVhYRFM4VlJURjEzS0s6NzQ3OTk5YjQ4ZTY5ZjJkN2Q1ZDg1MWMwZGE0MDQ0OGZiODQ4ZGFiYzQ3NmU0MTgxM2UxNTExOWUwYzM4MzM5OA
+          PREMINT_ID: aa
           EMAIL: ${{ github.event.inputs.email }}
+          # API_URL: https://api.mintology.app/v1/${{ secrets.MINTOLOGY_PROJECT_ID }}/mint
+          # API_KEY: ${{ secrets.MINTOLOGY_API_KEY }}
+          # PREMINT_ID: ${{ secrets.MINTOLOGY_PREMINT_ID }}
+
         run: |
           curl -X POST "$API_URL" \
             -H "accept: application/json" \
