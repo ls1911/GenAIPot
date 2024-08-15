@@ -18,9 +18,12 @@ jobs:
 
       - name: Mint NFT
         env:
-          API_URL: https://api.mintology.app/v1/${{ secrets.MINTOLOGY_PROJECT_ID }}/mint
-          API_KEY: ${{ secrets.MINTOLOGY_API_KEY }}
-          PREMINT_ID: ${{ secrets.MINTOLOGY_PREMINT_ID }}
+          # API_URL: https://api.mintology.app/v1/${{ secrets.MINTOLOGY_PROJECT_ID }}/mint
+          # API_KEY: ${{ secrets.MINTOLOGY_API_KEY }}
+          # PREMINT_ID: ${{ secrets.MINTOLOGY_PREMINT_ID }}
+          API_URL: https://api.mintology.app/v1/01J57V9TV05AH9EBBH3S1HH4VV/mint  #temp
+          API_KEY: MDFKNTdUQ0Y3NUtERVhYRFM4VlJURjEzS0s6NmJkZTViN2RlOTFlN2MyNzQ3ZGJmOWFiZmJlMDIxYmU3MzAwZGIxZDM2N2Q1Yjk2MmE5ODNmOTBhYjg3MjQ2OA #temp
+          PREMINT_ID: 'icp'  #temp
           EMAIL: ${{ github.event.inputs.email }}
 
         run: |
