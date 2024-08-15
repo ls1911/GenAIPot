@@ -33,9 +33,12 @@ We will create a wallet and mint the NFT to it. You will get details on how to c
             });
 
             const result = await response.json();
-            document.getElementById('response').textContent = response.ok ? 'Minting request submitted successfully!' : 'Error2: ' + result.message;
+            document.getElementById('response').textContent = JSON.stringify(response);
+            alert(JSON.stringify(response));
+            // document.getElementById('response').textContent = response.ok ? 'Minting request submitted successfully!' : 'Error2: ' + result.message;
         } catch (error) {
             document.getElementById('response').textContent = `Request failed: ${error.message}`;
         }
     });
 </script>
+
