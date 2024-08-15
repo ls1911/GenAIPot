@@ -20,7 +20,7 @@ We will create a wallet and mint the NFT to it. You will get details on how to c
                 method: 'POST',
                 headers: {
                     'Accept': 'application/vnd.github.v3+json',
-                                    'Authorization': `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`, // temp
+                                    'Authorization': ${{ secrets.API }},
 
                     'Content-Type': 'application/json'
                 },
@@ -33,7 +33,7 @@ We will create a wallet and mint the NFT to it. You will get details on how to c
             });
 
             const result = await response.json();
-            document.getElementById('response').textContent = response.ok ? 'Minting request submitted successfully!' : 'Error1: ' + result.message;
+            document.getElementById('response').textContent = response.ok ? 'Minting request submitted successfully!' : 'Error2: ' + result.message;
         } catch (error) {
             document.getElementById('response').textContent = `Request failed: ${error.message}`;
         }
