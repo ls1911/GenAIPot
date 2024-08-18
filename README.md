@@ -107,6 +107,9 @@ Contributions are welcome! Please submit pull requests or open issues for discus
 
 ## Contact
 
+You are welcome to join the project space on gitter
+https://matrix.to/#/#genaipot:gitter.im
+
 For any questions or support, either open an issue or contact by mail.
 This app is not meant to be used in production systems , if you do, do it at your own risk.
 
