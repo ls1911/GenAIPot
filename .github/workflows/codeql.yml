@@ -2,51 +2,37 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "dev" ]
+    branches: [ "main" ]
   schedule:
-    - cron: '25 20 * * 0'
+    - cron: '0 0 * * 0'
 
 jobs:
   analyze:
-    name: Analyze (${{ matrix.language }})
-
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: ${{ matrix.timeout }}
-    permissions:
-      security-events: write
-
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
-        include:
-        - language: python
-          os: ubuntu-latest
-          timeout: 360
-          build-mode: none
-        - language: swift
-          os: macos-latest
-          timeout: 120
-          build-mode: autobuild # or manual
-
+        language: [ 'javascript', 'python', 'go' ] # Specify your project languages
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Initialize CodeQL
+    - name: Set up CodeQL
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
-        build-mode: ${{ matrix.build-mode }}
 
-    - name: Build for manual mode
-      if: ${{ matrix.build-mode == 'manual' }}
-      shell: bash
+    - name: Build project
       run: |
-        xcodebuild -scheme <YourSchemeName> -configuration Release -sdk iphonesimulator
+        if [ "${{ matrix.language }}" == "javascript" ]; then
+          npm install
+        elif [ "${{ matrix.language }}" == "python" ]; then
+          pip install -r requirements.txt
+        elif [ "${{ matrix.language }}" == "go" ]; then
+          go build ./...
+        fi
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
-      with:
-        category: "/language:${{ matrix.language }}"
