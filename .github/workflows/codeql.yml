@@ -2,9 +2,9 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ "dev1" ]
+    branches: [ "dev" ]
   pull_request:
-    branches: [ "dev1" ]
+    branches: [ "dev" ]
   schedule:
     - cron: '25 20 * * 0'
 
@@ -40,7 +40,8 @@ jobs:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
 
-    - if: matrix.build-mode == 'manual'
+    - name: Build for manual mode
+      if: ${{ matrix.build-mode == 'manual' }}
       shell: bash
       run: |
         xcodebuild -scheme <YourSchemeName> -configuration Release -sdk iphonesimulator
@@ -48,4 +49,4 @@ jobs:
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
       with:
-        category: "/language:${{matrix.language}}"
+        category: "/language:${{ matrix.language }}"
