@@ -8,13 +8,14 @@ on:
   schedule:
     - cron: '0 0 * * 0'
 
+permissions:
+  contents: write
+  security-events: write
+
 jobs:
   analyze:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        language: [ 'python'] 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -22,17 +23,17 @@ jobs:
     - name: Set up CodeQL
       uses: github/codeql-action/init@v3
       with:
-        languages: ${{ matrix.language }}
+        languages: 'python'
 
     - name: Build project
       run: |
-        if [ "${{ matrix.language }}" == "javascript" ]; then
-          npm install
-        elif [ "${{ matrix.language }}" == "python" ]; then
-          pip install -r requirements.txt
-        elif [ "${{ matrix.language }}" == "go" ]; then
-          go build ./...
-        fi
+        # Your build steps here
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
+
+    - name: Upload SARIF results
+      run: |
+        # Ensure that the results are uploaded with the correct permissions
+        codeql database analyze --format=sarif -o results/python.sarif /home/runner/work/GenAIPot/GenAIPot
+      continue-on-error: true
