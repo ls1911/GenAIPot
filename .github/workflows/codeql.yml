@@ -31,9 +31,3 @@ jobs:
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
-
-    - name: Upload SARIF results
-      run: |
-        # Ensure that the results are uploaded with the correct permissions
-        codeql database analyze --format=sarif -o results/python.sarif /home/runner/work/GenAIPot/GenAIPot
-      continue-on-error: true
