@@ -6,7 +6,7 @@
 [![Deploy static content to Pages](https://github.com/ls1911/GenAIPot/actions/workflows/static.yml/badge.svg)](https://github.com/ls1911/GenAIPot/actions/workflows/static.yml)
 ![Lint with Pylint](https://github.com/ls1911/GenAIPot/actions/workflows/lint.yml/badge.svg)
 [![Publish Docker image](https://github.com/ls1911/GenAIPot/actions/workflows/docker.yml/badge.svg)](https://github.com/ls1911/GenAIPot/actions/workflows/docker.yml)
-![Coverage](https://img.shields.io/badge/build-pass-blue)
+[![CodeQL](https://github.com/ls1911/GenAIPot/actions/workflows/codeql.yml/badge.svg)
 
 
 ### GenAIPot the first open source A.I honeypot
