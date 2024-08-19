@@ -36,7 +36,7 @@ Here's a demo of the tool in action:
 
 ### Using PreMade Docker Image
 
-Read for use docker image is availble at docker hub
+Read for use docker image is available at docker hub
 ```
 docker pull annls/genaipot:latest
 docker run -dp25:25 -p110:110 annls/genaipot
