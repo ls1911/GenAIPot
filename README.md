@@ -7,9 +7,7 @@
 ![Lint with Pylint](https://github.com/ls1911/GenAIPot/actions/workflows/lint.yml/badge.svg)
 [![Publish Docker image](https://github.com/ls1911/GenAIPot/actions/workflows/docker.yml/badge.svg)](https://github.com/ls1911/GenAIPot/actions/workflows/docker.yml)
 ![Security Checks](https://github.com/ls1911/GenAIPot/actions/workflows/codeql.yml/badge.svg)
-
-<a href="https://genaipot.zulipchat.com/#narrow/stream/451830-genaipot/topic/Welcome">![Live Support](
-https://img.shields.io/badge/Support-ZulipChat-green?logo=cachet)</a>
+<a href="https://genaipot.zulipchat.com/#narrow/stream/451830-genaipot/topic/Welcome">![Live Support](https://img.shields.io/badge/Support-ZulipChat-green?logo=cachet)</a>
 
 
 ### GenAIPot the first open source A.I honeypot
