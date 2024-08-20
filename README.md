@@ -1,12 +1,15 @@
 
 # G̲e̲n̲A̲I̲P̲o̲t̲
 
-![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-green?style=plastic)
-![Python Version](https://img.shields.io/badge/python-3.12%2B-blue?style=flat-square)
+![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-green?style=plastic&logo=GNU)
+![Python Version](https://img.shields.io/badge/python-3.12%2B-blue?style=flat-square&logo=Python)
 [![Deploy Documentation](https://github.com/ls1911/GenAIPot/actions/workflows/static.yml/badge.svg)](https://github.com/ls1911/GenAIPot/actions/workflows/static.yml)
 ![Lint with Pylint](https://github.com/ls1911/GenAIPot/actions/workflows/lint.yml/badge.svg)
 [![Publish Docker image](https://github.com/ls1911/GenAIPot/actions/workflows/docker.yml/badge.svg)](https://github.com/ls1911/GenAIPot/actions/workflows/docker.yml)
 ![Security Checks](https://github.com/ls1911/GenAIPot/actions/workflows/codeql.yml/badge.svg)
+
+<a href="https://genaipot.zulipchat.com/#narrow/stream/451830-genaipot/topic/Welcome">![Live Support](
+https://img.shields.io/badge/Support-ZulipChat-green?logo=cachet)</a>
 
 
 ### GenAIPot the first open source A.I honeypot
