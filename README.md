@@ -1,12 +1,13 @@
 
 # G̲e̲n̲A̲I̲P̲o̲t̲
 
-![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-green?style=plastic)
-![Python Version](https://img.shields.io/badge/python-3.12%2B-blue?style=flat-square)
-[![Deploy static content to Pages](https://github.com/ls1911/GenAIPot/actions/workflows/static.yml/badge.svg)](https://github.com/ls1911/GenAIPot/actions/workflows/static.yml)
+![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-green?style=plastic&logo=GNU)
+![Python Version](https://img.shields.io/badge/python-3.12%2B-blue?style=flat-square&logo=Python)
+[![Deploy Documentation](https://github.com/ls1911/GenAIPot/actions/workflows/static.yml/badge.svg)](https://github.com/ls1911/GenAIPot/actions/workflows/static.yml)
 ![Lint with Pylint](https://github.com/ls1911/GenAIPot/actions/workflows/lint.yml/badge.svg)
 [![Publish Docker image](https://github.com/ls1911/GenAIPot/actions/workflows/docker.yml/badge.svg)](https://github.com/ls1911/GenAIPot/actions/workflows/docker.yml)
-[![CodeQL](https://github.com/ls1911/GenAIPot/actions/workflows/codeql.yml/badge.svg)
+![Security Checks](https://github.com/ls1911/GenAIPot/actions/workflows/codeql.yml/badge.svg)
+<a href="https://genaipot.zulipchat.com/#narrow/stream/451830-genaipot/topic/Welcome">![Live Support](https://img.shields.io/badge/Support-ZulipChat-green?logo=cachet)</a>
 
 
 ### GenAIPot the first open source A.I honeypot
@@ -36,7 +37,7 @@ Here's a demo of the tool in action:
 
 ### Using PreMade Docker Image
 
-Read for use docker image is availble at docker hub
+Read for use docker image is available at docker hub
 ```
 docker pull annls/genaipot:latest
 docker run -dp25:25 -p110:110 annls/genaipot
@@ -106,6 +107,9 @@ This project is licensed under the GPLv3 License. See the LICENSE file for detai
 Contributions are welcome! Please submit pull requests or open issues for discussions on improvements and new features.
 
 ## Contact
+
+You are welcome to join the project space on gitter
+https://matrix.to/#/#genaipot:gitter.im
 
 For any questions or support, either open an issue or contact by mail.
 This app is not meant to be used in production systems , if you do, do it at your own risk.

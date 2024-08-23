@@ -1,4 +1,4 @@
-name: "CodeQL"
+name: "Code Security"
 
 on:
   push:
