@@ -20,7 +20,7 @@ We will create a wallet and mint the NFT to it. You will get details on how to c
                 method: 'POST',
                 headers: {
                     'Accept': 'application/vnd.github.v3+json',
-                    'Authorization': `Bearer YOUR_PERSONAL_ACCESS_TOKEN`,  // Use your GitHub PAT with workflow scope here
+                    'Authorization': `Bearer SECRET_API`,  // Use your GitHub PAT with workflow scope here
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
