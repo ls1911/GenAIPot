@@ -7,7 +7,7 @@ on:
         description: 'Email address of the user'
         required: true
         type: string
-#
+
 jobs:
   mint-nft:
     runs-on: ubuntu-latest
