@@ -20,7 +20,7 @@ We will create a wallet and mint the NFT to it. You will get details on how to c
                 method: 'POST',
                 headers: {
                     'Accept': 'application/vnd.github.v3+json',
-                    'Authorization': `Bearer ${SECRET_API}`,  // Use your secret here
+                    'Authorization': `Bearer YOUR_PERSONAL_ACCESS_TOKEN`,  // Use your GitHub PAT with workflow scope here
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -31,9 +31,15 @@ We will create a wallet and mint the NFT to it. You will get details on how to c
                 })
             });
 
-            const result = await response.json();
-            document.getElementById('response').textContent = JSON.stringify(result, null, 2);
-            alert(JSON.stringify(result, null, 2));
+            if (!response.ok) {
+                const errorDetails = await response.json();
+                document.getElementById('response').textContent = `Error: ${errorDetails.message}`;
+                alert(`Error: ${errorDetails.message}`);
+            } else {
+                const result = await response.json();
+                document.getElementById('response').textContent = JSON.stringify(result, null, 2);
+                alert('Minting request submitted successfully!');
+            }
         } 
         catch (error) {
             document.getElementById('response').textContent = `Request failed: ${error.message}. Input email: ${email}`;
