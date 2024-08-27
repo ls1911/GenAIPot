@@ -1,9 +1,8 @@
 name: Publish Docker image
 
 on:
-  push:
-    branches:
-      - main  # Change to the branch you want to trigger the build
+  release:
+    types: [published]  # Trigger the workflow when a new release is published
 
 jobs:
   build:
@@ -28,7 +27,9 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64/v8
           push: true
-          tags: annls/genaipot:latest
-          
+          tags: |
+            annls/genaipot:latest
+            annls/genaipot:${{ github.event.release.tag_name }}  # Tag with the release version
+
       - name: Log out from Docker Hub
         run: docker logout
