@@ -145,3 +145,24 @@ SMTP is a protocol used to send emails from a client to a server or between serv
 - RCPT TO: Specify the recipient’s email address.
 - DATA: Start the transfer of the message content.
 - QUIT: End the session.
+
+# What is the intro.py file used for ???
+
+In the warez scene of the 1990s, it was common for cracked software (software that had its copy protection removed) to come bundled with a “demo” or “intro” file. 
+These intro files were essentially digital calling cards created by the cracking groups. 
+They were used to showcase the group’s skills and creativity, often featuring flashy animations, pixel art, scrolling text, and sometimes music.
+
+These intros served multiple purposes:
+
+	1.	Bragging Rights: Cracking groups wanted to show off their skills not just in bypassing software protection but also in creating impressive visual and audio effects. It was a way to gain reputation in the warez community.
+	2.	Identity: The intros were a form of branding. Each cracking group had its own style and identity, and the intros were a way to stamp their name on the cracked software.
+	3.	Entertainment: These intros were often fun and creative, adding a layer of entertainment to the software cracking scene. They were like mini digital art pieces, making the process of obtaining and using cracked software more than just about the software itself.
+
+The intro.py file you have see is a modern take on those old-school warez intros. 
+
+	•	Text Art: The large “Nucleon” text created using the art library mimics the kind of bold, attention-grabbing logos seen in many warez intros.
+	•	ASCII Art: The images of the bird and computer are created using text characters. This kind of art was common in the 90s intros because it could be rendered on any screen, regardless of graphical capabilities.
+	•	Animation: The script animates the ASCII art, making it appear as if the bird is flying or moving across the screen, reminiscent of the animated sequences often seen in warez intros.
+	•	Music Playback: By playing a music file, the script completes the multimedia experience that was typical of warez intros.
+
+In short, intro.py script is a homage to the warez intros from the 90s, bringing back the creativity and flair of that era in a modern format using Python. happy ?

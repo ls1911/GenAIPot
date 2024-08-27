@@ -6,3 +6,4 @@ Twisted
 halo
 art
 service_identity
+pygame # ;-*
