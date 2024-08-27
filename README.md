@@ -108,11 +108,11 @@ Contributions are welcome! Please submit pull requests or open issues for discus
 
 ## Contact
 
-You are welcome to join the project space on gitter
-https://matrix.to/#/#genaipot:gitter.im
+You are welcome to join the project space on ZulipChat
+https://genaipot.zulipchat.com/#narrow/stream/451830-genaipot/topic/Welcome
 
-For any questions or support, either open an issue or contact by mail.
-This app is not meant to be used in production systems , if you do, do it at your own risk.
+For any questions or support, either open an issue , contact by mail or use ZulipChat.
+This app is not meant to be used (But we know it is being used) in production systems , if you do, do it at your own risk.
 
 GenAIPot created by Nucleon Cyber (www.nucleon.sh) as part of its advanced Adversary Generated Threat Intelligence (AGTI) platform. 
 If you wish to use this version or more advanced versions in production settings or if you want to hear more about the most advanced AGTI platform, you welcome to contact the project admins or by mail contact@nucleon.sh
