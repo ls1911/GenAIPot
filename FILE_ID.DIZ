@@ -1,0 +1,24 @@
+  ________                  _____  ._____________       __   
+ /  _____/  ____   ____    /  _  \ |   \______   \_____/  |_ 
+/   \  ____/ __ \ /    \  /  /_\  \|   ||     ___/  _ \   __\
+\    \_\  \  ___/|   |  \/    |    \   ||    |  (  <_> )  |  
+ \______  /\___  >___|  /\____|__  /___||____|   \____/|__|  
+        \/     \/     \/         \/                          
+
+┌──────────────────────────────────────────────────────────────┐
+│                     GENAIpot AI Services Module              │
+│                                                              │
+│  v0.4.4 - 2024                                               │
+│                                                              │
+│ an open-source					       │
+│ AI honeypot that emulates services using generative AI to    │
+│ be more stealthy.                                            │
+│                                                              │
+│ - Supports interaction with OpenAI API (GPT-4)               │
+│ - NEW: Integrated Google's Gemini API Vertex support         │
+│ - Handles AI queries, configuration management,              │
+│   and response processing.                                   │
+│                                                              │
+│ Copyright (C) 2024 Nucleon Cyber. All rights reserved.       │
+│ Distributed under the GNU General Public License v3.0        │
+└──────────────────────────────────────────────────────────────┘
