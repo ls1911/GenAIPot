@@ -59,6 +59,7 @@ else:
 
 # Read config file to determine which AI provider to use
 config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'config.ini'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
 config = configparser.ConfigParser()
 config.read(config_file_path)
 
