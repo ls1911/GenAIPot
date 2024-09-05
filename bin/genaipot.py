@@ -23,11 +23,13 @@ import os
 import sys
 import configparser
 sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../src/ai'))
 
-from openai_service import OpenAIService
-from gcp_service import GCPService
-from azure_service import AzureAIService
-from utils import save_raw_response
+from ai.openai_service import OpenAIService
+from ai.gcp_service import GCPService
+from ai.azure_service import AzureAIService
+from utils import save_raw_response  # Adjusted import from utils
+
 from twisted.internet import reactor
 from smtp_protocol import SMTPFactory
 from pop3.pop3_protocol import POP3Factory
@@ -59,12 +61,11 @@ else:
 
 # Read config file to determine which AI provider to use
 config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'config.ini'))
-sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
 config = configparser.ConfigParser()
 config.read(config_file_path)
 
 ai_provider = config.get('ai', 'provider', fallback='openai')  # 'openai', 'gcp', or 'azure'
-api_key = config.get('ai', 'api_key', fallback=None)
+openai_key = config.get('openai', 'api_key', fallback=None)
 gcp_project = config.get('gcp', 'project', fallback=None)
 gcp_location = config.get('gcp', 'location', fallback=None)
 gcp_model_id = config.get('gcp', 'model_id', fallback=None)
@@ -73,13 +74,26 @@ azure_openai_endpoint = config.get('azure', 'endpoint', fallback=None)
 
 # Initialize AI service based on the provider chosen
 if ai_provider == 'openai':
-    ai_service = OpenAIService(api_key=api_key, debug_mode=args.debug)
+    if openai_key:
+        ai_service = OpenAIService(api_key=openai_key, debug_mode=args.debug)
+    else:
+        logger.error("No OpenAI API key found in configuration.")
+        sys.exit(1)
 elif ai_provider == 'gcp':
-    ai_service = GCPService(gcp_project=gcp_project, gcp_location=gcp_location, gcp_model_id=gcp_model_id, debug_mode=args.debug)
+    if gcp_project and gcp_location and gcp_model_id:
+        ai_service = GCPService(gcp_project=gcp_project, gcp_location=gcp_location, gcp_model_id=gcp_model_id, debug_mode=args.debug)
+    else:
+        logger.error("GCP configuration incomplete in config file.")
+        sys.exit(1)
 elif ai_provider == 'azure':
-    ai_service = AzureAIService(azure_openai_key=azure_openai_key, azure_openai_endpoint=azure_openai_endpoint, debug_mode=args.debug)
+    if azure_openai_key and azure_openai_endpoint:
+        ai_service = AzureAIService(azure_openai_key=azure_openai_key, azure_openai_endpoint=azure_openai_endpoint, debug_mode=args.debug)
+    else:
+        logger.error("Azure OpenAI configuration incomplete in config file.")
+        sys.exit(1)
 else:
-    raise ValueError(f"Unsupported AI provider: {ai_provider}")
+    logger.error(f"Unsupported AI provider: {ai_provider}")
+    sys.exit(1)
 
 VERSION = "0.4.5"  # Incremented version number
 
@@ -194,7 +208,6 @@ def run_config_wizard():
     if provider != 'offline':
         query_ai_service_for_responses(technology, segment, domain, anonymous_access)
         
-    
 def query_ai_service_for_responses(technology, segment, domain, anonymous_access):
     """
     Query the AI service for SMTP and POP3 responses and sample emails.
@@ -219,12 +232,20 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
     ]
 
     try:
+        # Query for SMTP response
         smtp_response = ai_service.query_responses(smtp_prompt, "smtp")
         save_raw_response(smtp_response, "smtp")
+
+        # Query for POP3 response
         pop3_response = ai_service.query_responses(pop3_prompt, "pop3")
         save_raw_response(pop3_response, "pop3")
+
+        # Query for email responses
+        for idx, email_prompt in enumerate(email_prompts):
+            email_response = ai_service.query_responses(email_prompt, f"email_{idx+1}")
+            save_raw_response(email_response, f"email_{idx+1}")
     except Exception as e:
-        print(f"Failed to generate responses: {e}")
+        logger.error(f"Failed to generate responses: {e}")
 
 def main():
     """Main function to run the GenAIPot honeypot services."""
@@ -247,16 +268,26 @@ def main():
     
     if provider == 'openai':
         api_key = config.get('openai', 'api_key', fallback=None)
+        logging.debug(f"Retrieved OpenAI API key: {api_key}")  # Log the retrieved API key
+        if api_key is None:
+            logging.error("No OpenAI API key found in configuration.")
+            return
         ai_service = OpenAIService(api_key=api_key, debug_mode=args.debug)
     elif provider == 'azure':
         api_key = config.get('azure', 'api_key', fallback=None)
         endpoint = config.get('azure', 'endpoint', fallback=None)
+        if not api_key or not endpoint:
+            logging.error("No Azure API key or endpoint found in configuration.")
+            return
         ai_service = AzureAIService(azure_openai_key=api_key, azure_openai_endpoint=endpoint, debug_mode=args.debug)
     elif provider == 'gcp':
         api_key = config.get('gcp', 'api_key', fallback=None)
         project = config.get('gcp', 'project', fallback=None)
         location = config.get('gcp', 'location', fallback=None)
         model_id = config.get('gcp', 'model_id', fallback=None)
+        if not api_key or not project or not location or not model_id:
+            logging.error("GCP configuration incomplete in config file.")
+            return
         ai_service = GCPService(gcp_project=project, gcp_location=location, gcp_model_id=model_id, debug_mode=args.debug)
     elif provider == 'offline':
         print("Using offline mode with pre-existing templates.")
