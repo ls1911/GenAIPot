@@ -22,20 +22,20 @@ import argparse
 import os
 import sys
 import configparser
+from halo import Halo  # Halo spinner for feedback
 sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../src/ai'))
 
 from ai.openai_service import OpenAIService
 from ai.gcp_service import GCPService
 from ai.azure_service import AzureAIService
-from utils import save_raw_response  # Adjusted import from utils
+from utils import save_raw_response
 
 from twisted.internet import reactor
 from smtp_protocol import SMTPFactory
 from pop3.pop3_protocol import POP3Factory
 from auth import check_credentials, hash_password
 from database import setup_database
-from halo import Halo
 import art
 import shutil
 
@@ -73,26 +73,34 @@ azure_openai_key = config.get('azure', 'api_key', fallback=None)
 azure_openai_endpoint = config.get('azure', 'endpoint', fallback=None)
 
 # Initialize AI service based on the provider chosen
-if ai_provider == 'openai':
-    if openai_key:
-        ai_service = OpenAIService(api_key=openai_key, debug_mode=args.debug)
+spinner = Halo(text="Initializing AI Service", spinner='dots')
+spinner.start()
+
+try:
+    if ai_provider == 'openai':
+        if openai_key:
+            ai_service = OpenAIService(api_key=openai_key, debug_mode=args.debug)
+        else:
+            logger.error("No OpenAI API key found in configuration.")
+            sys.exit(1)
+    elif ai_provider == 'gcp':
+        if gcp_project and gcp_location and gcp_model_id:
+            ai_service = GCPService(gcp_project=gcp_project, gcp_location=gcp_location, gcp_model_id=gcp_model_id, debug_mode=args.debug)
+        else:
+            logger.error("GCP configuration incomplete in config file.")
+            sys.exit(1)
+    elif ai_provider == 'azure':
+        if azure_openai_key and azure_openai_endpoint:
+            ai_service = AzureAIService(azure_openai_key=azure_openai_key, azure_openai_endpoint=azure_openai_endpoint, debug_mode=args.debug)
+        else:
+            logger.error("Azure OpenAI configuration incomplete in config file.")
+            sys.exit(1)
     else:
-        logger.error("No OpenAI API key found in configuration.")
+        logger.error(f"Unsupported AI provider: {ai_provider}")
         sys.exit(1)
-elif ai_provider == 'gcp':
-    if gcp_project and gcp_location and gcp_model_id:
-        ai_service = GCPService(gcp_project=gcp_project, gcp_location=gcp_location, gcp_model_id=gcp_model_id, debug_mode=args.debug)
-    else:
-        logger.error("GCP configuration incomplete in config file.")
-        sys.exit(1)
-elif ai_provider == 'azure':
-    if azure_openai_key and azure_openai_endpoint:
-        ai_service = AzureAIService(azure_openai_key=azure_openai_key, azure_openai_endpoint=azure_openai_endpoint, debug_mode=args.debug)
-    else:
-        logger.error("Azure OpenAI configuration incomplete in config file.")
-        sys.exit(1)
-else:
-    logger.error(f"Unsupported AI provider: {ai_provider}")
+    spinner.succeed("AI Service initialized successfully.")
+except Exception as e:
+    spinner.fail(f"Failed to initialize AI service: {e}")
     sys.exit(1)
 
 VERSION = "0.4.5"  # Incremented version number
@@ -201,13 +209,17 @@ def run_config_wizard():
     config.set('server', 'domain', domain)
     config.set('server', 'anonymous_access', str(anonymous_access))
     
-    with open(config_file_path, 'w') as configfile:
-        config.write(configfile)
-    print("Configuration has been saved.")
+    with Halo(text="Saving configuration...", spinner='dots') as spinner:
+        try:
+            with open(config_file_path, 'w') as configfile:
+                config.write(configfile)
+            spinner.succeed("Configuration has been saved.")
+        except Exception as e:
+            spinner.fail(f"Failed to save configuration: {e}")
 
     if provider != 'offline':
         query_ai_service_for_responses(technology, segment, domain, anonymous_access)
-        
+
 def query_ai_service_for_responses(technology, segment, domain, anonymous_access):
     """
     Query the AI service for SMTP and POP3 responses and sample emails.
@@ -232,20 +244,23 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
     ]
 
     try:
-        # Query for SMTP response
-        smtp_response = ai_service.query_responses(smtp_prompt, "smtp")
-        save_raw_response(smtp_response, "smtp")
+        with Halo(text="SMTP Contacting A.I service and generating responses...", spinner='dots') as spinner:
+            smtp_response = ai_service.query_responses(smtp_prompt, "smtp")
+            save_raw_response(smtp_response, "smtp")
+            spinner.succeed("SMTP responses generated successfully.")
 
-        # Query for POP3 response
-        pop3_response = ai_service.query_responses(pop3_prompt, "pop3")
-        save_raw_response(pop3_response, "pop3")
-
-        # Query for email responses
+        with Halo(text="POP3 Contacting A.I service and generating responses...", spinner='dots') as spinner:
+            pop3_response = ai_service.query_responses(pop3_prompt, "pop3")
+            save_raw_response(pop3_response, "pop3")
+            spinner.succeed("POP3 responses generated successfully.")
+        
         for idx, email_prompt in enumerate(email_prompts):
-            email_response = ai_service.query_responses(email_prompt, f"email_{idx+1}")
-            save_raw_response(email_response, f"email_{idx+1}")
+            with Halo(text=f"Generating sample email {idx+1}...", spinner='dots') as spinner:
+                email_response = ai_service.query_responses(email_prompt, f"email_{idx+1}")
+                save_raw_response(email_response, f"email_{idx+1}")
+                spinner.succeed(f"Sample email {idx+1} generated successfully.")
     except Exception as e:
-        logger.error(f"Failed to generate responses: {e}")
+        print(f"Failed to generate responses: {e}")
 
 def main():
     """Main function to run the GenAIPot honeypot services."""
@@ -330,6 +345,7 @@ def main():
 
     else:
         parser.print_help()
+
 
 if __name__ == "__main__":
     main()
