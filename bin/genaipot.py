@@ -21,18 +21,19 @@ import logging
 import argparse
 import os
 import sys
+import configparser
 sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
 
-import configparser
-import datetime
+from openai_service import OpenAIService
+from gcp_service import GCPService
+from azure_service import AzureAIService
+from utils import save_raw_response
 from twisted.internet import reactor
 from smtp_protocol import SMTPFactory
 from pop3.pop3_protocol import POP3Factory
-from ai_services import AIService
 from auth import check_credentials, hash_password
 from database import setup_database
 from halo import Halo
-import openai
 import art
 import shutil
 
@@ -56,17 +57,30 @@ else:
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
 
-# Read config file
-prompts_config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'prompts.ini'))
-config_config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'config.ini'))
-
+# Read config file to determine which AI provider to use
+config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'config.ini'))
 config = configparser.ConfigParser()
-config.read(config_config_file_path)
-prompts = configparser.ConfigParser()
+config.read(config_file_path)
 
-prompts.read(prompts_config_file_path)
+ai_provider = config.get('ai', 'provider', fallback='openai')  # 'openai', 'gcp', or 'azure'
+api_key = config.get('ai', 'api_key', fallback=None)
+gcp_project = config.get('gcp', 'project', fallback=None)
+gcp_location = config.get('gcp', 'location', fallback=None)
+gcp_model_id = config.get('gcp', 'model_id', fallback=None)
+azure_openai_key = config.get('azure', 'api_key', fallback=None)
+azure_openai_endpoint = config.get('azure', 'endpoint', fallback=None)
 
-VERSION = "0.4.4"  # Incremented version number
+# Initialize AI service based on the provider chosen
+if ai_provider == 'openai':
+    ai_service = OpenAIService(api_key=api_key, debug_mode=args.debug)
+elif ai_provider == 'gcp':
+    ai_service = GCPService(gcp_project=gcp_project, gcp_location=gcp_location, gcp_model_id=gcp_model_id, debug_mode=args.debug)
+elif ai_provider == 'azure':
+    ai_service = AzureAIService(azure_openai_key=azure_openai_key, azure_openai_endpoint=azure_openai_endpoint, debug_mode=args.debug)
+else:
+    raise ValueError(f"Unsupported AI provider: {ai_provider}")
+
+VERSION = "0.4.5"  # Incremented version number
 
 def ensure_files_directory():
     """Ensure the existence of the 'files' directory."""
@@ -75,21 +89,12 @@ def ensure_files_directory():
 
 def validate_openai_key(api_key):
     """Validate the OpenAI API key by making a simple API call."""
-    openai.api_key = api_key
     try:
-        # Attempt a simple API request to verify the key
-        openai.Engine.list()
-
-        spinner = Halo(text="API key is valid.", spinner='dots')
-        spinner.start()
-        spinner.stop_and_persist(symbol='🦄'.encode('utf-8'))
-        print("---------------------------------------")
+        ai_service.validate_key()  # Moved the validation to the service class
+        print("API key is valid.")
         return True
-    except openai.error.AuthenticationError:
-        print("Invalid API key. Please enter a valid OpenAI API key.")
-        return False
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"API key validation failed: {e}")
         return False
 
 def run_config_wizard():
@@ -105,43 +110,25 @@ def run_config_wizard():
             print(f"Config file not found at {config_src}")
         return
 
-    spinner = Halo(text="Initiating Configuration Wizard", spinner='dots')
-    spinner.start()
-    spinner.stop_and_persist(symbol='🦄'.encode('utf-8'))
-
     openai_key = input("Enter your OpenAI API key: ")
 
-    # Use Halo spinner for key verification
-    with Halo(text='Verifying A.I key...', spinner='dots') as spinner:
-        if not validate_openai_key(openai_key):
-            spinner.fail("A valid key is needed for GenAIPot to function properly.")
-            use_default = input("Do you want to use default template files instead of the A.I service generating them dynamically for you? (y/n): ").lower() == 'y'
-            if not use_default:
-                print("Exiting the application. Please provide a valid OpenAI API key.")
-                exit(1)
-            else:
-                # Copy default files from var/no_ai to files/
-                if not os.path.exists('files'):
-                    os.makedirs('files')
-                for filename in os.listdir('var/no_ai'):
-                    src_path = os.path.join('var/no_ai', filename)
-                    dst_path = os.path.join('files', filename)
-                    shutil.copyfile(src_path, dst_path)
-                    if not os.path.exists(src_path):
-                        print(f"Source directory does not exist: {src_path}")
+    # Use spinner for key verification
+    spinner = Halo(text='Verifying A.I key...', spinner='dots')
+    spinner.start()
+    if not validate_openai_key(openai_key):
+        spinner.fail("Invalid API key provided.")
+        use_default = input("Do you want to use default template files instead? (y/n): ").lower() == 'y'
+        if use_default:
+            # Copy default template files
+            for filename in os.listdir('var/no_ai'):
+                shutil.copyfile(os.path.join('var/no_ai', filename), os.path.join('files', filename))
+            print("Default template files have been copied.")
+        else:
+            print("Exiting. Please provide a valid API key.")
+            exit(1)
+    spinner.succeed("API key validated.")
 
-                config_dst = os.path.join('etc/', 'config.ini')
-                config_src = os.path.join('var/no_ai', 'config.ini')
-                if os.path.exists(config_src):
-                    shutil.copyfile(config_src, config_dst)
-                    print("Default template files have been used.")
-                else:
-                    print(f"Config file not found at {config_src}")
-
-                return
-
-        spinner.succeed("A.I key verified successfully.")
-
+    # Configure honeypot with inputs
     technology = input("Choose the server technology to emulate:\n"
                        "1. sendmail\n"
                        "2. exchange\n"
@@ -150,56 +137,26 @@ def run_config_wizard():
                        "5. zimbra\n"
                        "6. other\n"
                        "Enter the number of your choice: ")
-    technology = {
-        '1': 'sendmail',
-        '2': 'exchange',
-        '3': 'qmail',
-        '4': 'postfix',
-        '5': 'zimbra',
-        '6': 'other'
-    }.get(technology, 'generic')
+    technology = {'1': 'sendmail', '2': 'exchange', '3': 'qmail', '4': 'postfix', '5': 'zimbra', '6': 'other'}.get(technology, 'generic')
+    
+    segment = input("Enter the segment (industry description): ")
+    domain = input("Enter the domain name (fictional company): ")
+    anonymous_access = input("Allow anonymous access? (y/n): ").lower() == 'y'
 
-    segment = input("Enter the segment (Description of the industry segment; for example: an international bank located in nome alsaka.): ")
-    domain = input("Enter the domain name (name for your fictional company): ")
-    anonymous_access = input("Allow anonymous access? (y/n): (if yes, any username will be accepted)").lower() == 'y'
-
-    if not anonymous_access:
-        username = input("Enter username: ")
-        password = input("Enter password: ")
-        hashed_password = hash_password(password)
-        config.set('server', 'username', username)
-        config.set('server', 'password', hashed_password)
-    else:
-        if config.has_option('server', 'username'):
-            config.remove_option('server', 'username')
-        if config.has_option('server', 'password'):
-            config.remove_option('server', 'password')
-
-    with Halo(text='Saving configuration...', spinner='dots') as spinner:
-        # Save the configuration to the config file
-        if not config.has_section('openai'):
-            config.add_section('openai')
-        if not config.has_section('server'):
-            config.add_section('server')
-
-        config.set('openai', 'api_key', openai_key)
-        config.set('server', 'technology', technology)
-        config.set('server', 'segment', segment)
-        config.set('server', 'domain', domain)
-        config.set('server', 'anonymous_access', str(anonymous_access))
-
-        with open('etc/config.ini', 'w') as configfile:
-            config.write(configfile)
-
-        spinner.succeed("Configuration has been saved successfully.")
-
-
+    # Update the config file
+    config.set('ai', 'api_key', openai_key)
+    config.set('server', 'technology', technology)
+    config.set('server', 'segment', segment)
+    config.set('server', 'domain', domain)
+    config.set('server', 'anonymous_access', str(anonymous_access))
+    
+    with open(config_file_path, 'w') as configfile:
+        config.write(configfile)
     print("Configuration has been saved.")
 
-    # Generate responses and sample emails using the AI service
-    query_ai_service_for_responses(technology, segment, domain, anonymous_access, args.debug,openai_key)
+    query_ai_service_for_responses(technology, segment, domain, anonymous_access)
 
-def query_ai_service_for_responses(technology, segment, domain, anonymous_access, debug_mode,api_key):
+def query_ai_service_for_responses(technology, segment, domain, anonymous_access):
     """
     Query the AI service for SMTP and POP3 responses and sample emails.
 
@@ -208,11 +165,12 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
         segment (str): The segment of the industry or application.
         domain (str): The domain name for the service.
         anonymous_access (bool): Whether anonymous access is allowed.
-        debug_mode (bool): Whether to enable debug mode.
     """
-    ai_service = AIService(api_key=api_key, debug_mode=debug_mode)
-
     # Load prompts from prompts.ini
+    prompts_config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'prompts.ini'))
+    prompts = configparser.ConfigParser()
+    prompts.read(prompts_config_file_path)
+
     smtp_prompt = prompts.get('Prompts', 'smtp_prompt').format(technology=technology)
     pop3_prompt = prompts.get('Prompts', 'pop3_prompt').format(technology=technology)
     email_prompts = [
@@ -221,69 +179,13 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
         prompts.get('Prompts', 'internal_email_prompt').format(segment=segment, domain=domain)
     ]
 
-    # Spinner for SMTP responses
-    spinner = Halo(text='SMTP Contacting A.I service and generating responses (1/5)...', spinner='dots')
-    spinner.start()
     try:
-        smtp_raw_response = ai_service.query_responses(smtp_prompt, "smtp")
-        smtp_cleaned_response = ai_service.cleanup_and_parse_json(smtp_raw_response)
-        ai_service._store_responses(smtp_cleaned_response, "smtp")
-        spinner.succeed('SMTP responses generated successfully.')
+        smtp_response = ai_service.query_responses(smtp_prompt, "smtp")
+        save_raw_response(smtp_response, "smtp")
+        pop3_response = ai_service.query_responses(pop3_prompt, "pop3")
+        save_raw_response(pop3_response, "pop3")
     except Exception as e:
-        spinner.fail('Failed to generate SMTP responses.')
-
-    # Spinner for POP3 responses
-    spinner = Halo(text='POP3 Contacting A.I service and generating responses (2/5)...', spinner='dots')
-    spinner.start()
-    try:
-        pop3_raw_response = ai_service.query_responses(pop3_prompt, "pop3")
-        pop3_cleaned_response = ai_service.cleanup_and_parse_json(pop3_raw_response)
-        ai_service._store_responses(pop3_cleaned_response, "pop3")
-        spinner.succeed('POP3 responses generated successfully.')
-    except Exception as e:
-        spinner.fail('Failed to generate POP3 responses.')
-        if debug_mode:
-            logger.error(f"Error generating POP3 responses: {e}")
-
-    # Spinner for sample emails
-    total_emails = len(email_prompts)
-    for i in range(total_emails):
-        spinner = Halo(text=f'Contacting A.I service and generating sample email #{i+1} ({i+3}/5)...', spinner='dots')
-        spinner.start()
-        try:
-            email_raw_response = ai_service.query_responses(email_prompts[i], f"email{i+1}")
-            email_cleaned_response = ai_service.cleanup_and_parse_json(email_raw_response)
-            ai_service.save_email_responses(email_cleaned_response, f"email{i+1}")
-            spinner.succeed(f'Sample email #{i+1} generated successfully.')
-        except Exception as e:
-            spinner.fail(f'Failed to generate sample email #{i+1}.')
-            if debug_mode:
-                logger.error(f"Error generating sample email #{i+1}: {e}")
-
-    # Update the config file with the technology, segment, domain, and anonymous access
-    config.set('server', 'technology', technology)
-    config.set('server', 'segment', segment)
-    config.set('server', 'domain', domain)
-    config.set('server', 'anonymous_access', str(anonymous_access))
-
-    # Handle user credentials if anonymous access is not allowed
-    if not anonymous_access:
-        username = input("Enter username: ")
-        password = input("Enter password: ")
-        hashed_password = hash_password(password)
-        config.set('server', 'username', username)
-        config.set('server', 'password', hashed_password)
-    else:
-        if config.has_option('server', 'username'):
-            config.remove_option('server', 'username')
-        if config.has_option('server', 'password'):
-            config.remove_option('server', 'password')
-
-    # Save the updated configuration
-    with open('etc/config.ini', 'w') as configfile:
-        config.write(configfile)
-
-    logger.info(f"Config file updated with anonymous_access: {anonymous_access}")
+        print(f"Failed to generate responses: {e}")
 
 def main():
     """Main function to run the GenAIPot honeypot services."""
@@ -294,19 +196,15 @@ def main():
 
     Art = art.text2art("GenAIPot")
     print(Art)
-    print("---------------------------------------")
-    a = f"Version: {VERSION}"
-    spinner = Halo(text=a, spinner='dots')    
-    spinner.succeed()
-    spinner = Halo(text="The first Generative A.I Honeypot", spinner='dots')
-    spinner.stop_and_persist(symbol='🦄'.encode('utf-8'))
+    print(f"Version: {VERSION}")
+    print("The first Generative A.I Honeypot")
 
     if args.config or args.docker:
         run_config_wizard()
         return
 
     # Check for the presence of an OpenAI API key or 'no_ai' setting
-    api_key = config.get('openai', 'api_key', fallback='')
+    api_key = config.get('ai', 'api_key', fallback='')
     
     if api_key == 'no_ai':
         print("Using default templates as no valid A.I key is set.")
