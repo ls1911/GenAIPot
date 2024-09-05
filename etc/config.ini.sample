@@ -1,0 +1,15 @@
+[ai]
+provider = openai  # Can be 'openai', 'azure', 'gcp', or 'offline'
+
+[openai]
+api_key = your_openai_api_key # replace with your openai api key https://platform.openai.com/api-keys
+
+[azure]
+api_key = your_azure_openai_api_key
+endpoint = https://your-azure-openai-endpoint  # Replace with your Azure OpenAI endpoint
+
+[gcp]
+api_key = your_google_vertex_ai_key # https://media1.tenor.com/m/QCSTuIjN9EoAAAAC/ata.gif
+project = your_google_project       #  gcp dont want to provide us with credits to test the service
+location = your_google_location     #  They act like: https://media1.tenor.com/m/QCSTuIjN9EoAAAAC/ata.gif
+model_id = your_google_model_id     #  

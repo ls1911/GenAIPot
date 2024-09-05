@@ -2,6 +2,8 @@ import openai
 from ai.gcp_service import GCPService
 from ai.openai_service import OpenAIService
 from ai.azure_service import AzureAIService
+import os
+import configparser
 
 class AIService:
     """
@@ -68,39 +70,46 @@ def validate_openai_key(api_key):
         return False
 
 
-def query_ai_service_for_responses(ai_service, prompts):
+def query_ai_service_for_responses(technology, segment):
     """
     Query the AI service for SMTP and POP3 responses and sample emails.
 
     Args:
-        ai_service (AIService): The initialized AIService object.
-        prompts (dict): A dictionary containing different prompts for querying.
-
-    Returns:
-        dict: A dictionary containing AI service responses.
+        technology (str): The technology used (e.g., sendmail, exchange).
+        segment (str): The segment of the industry or application.
     """
-    responses = {}
+    # Load prompts from prompts.ini
+    prompts_config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'prompts.ini'))
+    prompts = configparser.ConfigParser()
+    prompts.read(prompts_config_file_path)
+
+    smtp_prompt = prompts.get('Prompts', 'smtp_prompt').format(technology=technology)
+    pop3_prompt = prompts.get('Prompts', 'pop3_prompt').format(technology=technology)
+
+    email_prompts = [
+        prompts.get('Prompts', 'client_email_prompt').format(segment=segment),
+        prompts.get('Prompts', 'supplier_email_prompt').format(segment=segment),
+        prompts.get('Prompts', 'internal_email_prompt').format(segment=segment)
+    ]
 
     try:
-        smtp_response = ai_service.query_responses(prompts['smtp_prompt'], "smtp")
-        responses['smtp'] = smtp_response
+        smtp_response = ai_service.query_responses(smtp_prompt, "smtp")
+        save_raw_response(smtp_response, "smtp")
         print("✔ SMTP responses generated successfully.")
     except Exception as e:
         print(f"✘ Failed to generate SMTP responses: {e}")
-    
+
     try:
-        pop3_response = ai_service.query_responses(prompts['pop3_prompt'], "pop3")
-        responses['pop3'] = pop3_response
+        pop3_response = ai_service.query_responses(pop3_prompt, "pop3")
+        save_raw_response(pop3_response, "pop3")
         print("✔ POP3 responses generated successfully.")
     except Exception as e:
         print(f"✘ Failed to generate POP3 responses: {e}")
 
-    for i, email_prompt in enumerate(prompts['email_prompts'], 1):
+    for i, email_prompt in enumerate(email_prompts, 1):
         try:
-            email_response = ai_service.query_responses(email_prompt, f"email{i}")
-            responses[f'email_{i}'] = email_response
+            email_response = ai_service.query_responses(email_prompt, f"email_{i}")
+            save_raw_response(email_response, f"email_{i}")
             print(f"✔ Sample email {i} generated successfully.")
         except Exception as e:
-            print(f"✘ Failed to generate sample email {i}: {e}")
-
-    return responses
+            print(f"✘ Failed to generate email {i}: {e}")

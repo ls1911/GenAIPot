@@ -46,32 +46,15 @@ config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 config = configparser.ConfigParser()
 config.read(config_file_path)
 
-ai_provider = config.get('ai', 'provider', fallback='openai')  # 'openai', 'gcp', or 'azure'
-api_key = config.get('ai', 'api_key', fallback=None)
-gcp_project = config.get('gcp', 'project', fallback=None)
-gcp_location = config.get('gcp', 'location', fallback=None)
-gcp_model_id = config.get('gcp', 'model_id', fallback=None)
-azure_openai_key = config.get('azure', 'api_key', fallback=None)
-azure_openai_endpoint = config.get('azure', 'endpoint', fallback=None)
-
-# Initialize AI service based on the provider chosen
-if ai_provider == 'openai':
-    ai_service = OpenAIService(api_key=api_key, debug_mode=args.debug)
-elif ai_provider == 'gcp':
-    ai_service = GCPService(gcp_project=gcp_project, gcp_location=gcp_location, gcp_model_id=gcp_model_id, debug_mode=args.debug)
-elif ai_provider == 'azure':
-    ai_service = AzureAIService(azure_openai_key=azure_openai_key, azure_openai_endpoint=azure_openai_endpoint, debug_mode=args.debug)
-else:
-    raise ValueError(f"Unsupported AI provider: {ai_provider}")
-
-VERSION = "0.6.1"  # Updated version number
+# Version number update
+VERSION = "0.6.3"
 
 def ensure_files_directory():
     """Ensure the existence of the 'files' directory."""
     if not os.path.exists('files'):
         os.makedirs('files')
 
-def validate_openai_key(api_key):
+def validate_openai_key(api_key, ai_service):
     """Validate the OpenAI API key by making a simple API call."""
     try:
         ai_service.validate_key()  # Moved the validation to the service class
@@ -80,6 +63,43 @@ def validate_openai_key(api_key):
     except Exception as e:
         print(f"API key validation failed: {e}")
         return False
+
+def initialize_ai_service(config, args):
+    """Initialize the AI service based on the provider from the configuration."""
+    ai_provider = config.get('ai', 'provider', fallback='offline')  # 'openai', 'gcp', or 'azure'
+
+    if ai_provider == 'openai':
+        api_key = config.get('openai', 'api_key', fallback=None)
+        if not api_key:
+            logging.error("No OpenAI API key found in configuration.")
+            return None
+        return OpenAIService(api_key=api_key, debug_mode=args.debug)
+
+    elif ai_provider == 'azure':
+        api_key = config.get('azure', 'api_key', fallback=None)
+        endpoint = config.get('azure', 'endpoint', fallback=None)
+        if not api_key or not endpoint:
+            logging.error("No Azure API key or endpoint found in configuration.")
+            return None
+        return AzureAIService(azure_openai_key=api_key, azure_openai_endpoint=endpoint, debug_mode=args.debug)
+
+    elif ai_provider == 'gcp':
+        api_key = config.get('gcp', 'api_key', fallback=None)
+        project = config.get('gcp', 'project', fallback=None)
+        location = config.get('gcp', 'location', fallback=None)
+        model_id = config.get('gcp', 'model_id', fallback=None)
+        if not api_key or not project or not location or not model_id:
+            logging.error("Incomplete GCP configuration.")
+            return None
+        return GCPService(gcp_project=project, gcp_location=location, gcp_model_id=model_id, debug_mode=args.debug)
+
+    elif ai_provider == 'offline':
+        print("Using offline mode with pre-existing templates.")
+        return None  # No AI service is used in offline mode
+
+    else:
+        print("Invalid AI provider specified in config. Exiting.")
+        exit(1)
 
 def main():
     """Main function to run the GenAIPot honeypot services."""
@@ -103,33 +123,46 @@ def main():
     # Check which AI provider to use
     provider = config.get('ai', 'provider', fallback='offline')
 
+    # Initialize the appropriate AI service based on the provider chosen
+    ai_service = None
     if provider == 'openai':
         api_key = config.get('openai', 'api_key', fallback=None)
-        logging.debug(f"Retrieved OpenAI API key: {api_key}")  # Log the retrieved API key
         if not api_key:
             logging.error("No OpenAI API key found in configuration.")
         else:
             ai_service = OpenAIService(api_key=api_key, debug_mode=args.debug)
+
     elif provider == 'azure':
         api_key = config.get('azure', 'api_key', fallback=None)
         endpoint = config.get('azure', 'endpoint', fallback=None)
-        ai_service = AzureAIService(azure_openai_key=api_key, azure_openai_endpoint=endpoint, debug_mode=args.debug)
+        if not api_key or not endpoint:
+            logging.error("Azure OpenAI API key or endpoint is missing in configuration.")
+        else:
+            ai_service = AzureAIService(azure_openai_key=api_key, azure_openai_endpoint=endpoint, debug_mode=args.debug)
+
     elif provider == 'gcp':
         api_key = config.get('gcp', 'api_key', fallback=None)
         project = config.get('gcp', 'project', fallback=None)
         location = config.get('gcp', 'location', fallback=None)
         model_id = config.get('gcp', 'model_id', fallback=None)
-        ai_service = GCPService(gcp_project=project, gcp_location=location, gcp_model_id=model_id, debug_mode=args.debug)
+        if not api_key or not project or not location or not model_id:
+            logging.error("GCP API key, project, location, or model ID is missing in configuration.")
+        else:
+            ai_service = GCPService(gcp_project=project, gcp_location=location, gcp_model_id=model_id, debug_mode=args.debug)
+
     elif provider == 'offline':
         print("Using offline mode with pre-existing templates.")
         ai_service = None  # No AI service is used in offline mode
+
     else:
         print("Invalid AI provider specified in config. Exiting.")
         exit(1)
 
+    # Validate the AI service if applicable
     if ai_service and provider != 'offline':
         validate_openai_key(api_key)
 
+    # Start SMTP, POP3, or both honeypot services
     if args.smtp or args.pop3 or args.all:
         try:
             print("\n")
@@ -144,11 +177,13 @@ def main():
                 logger.info(f"Domain Name: {config.get('server', 'domain', fallback='localhost')}")
                 logging.getLogger('urllib3').setLevel(logging.DEBUG)
 
+            # Start SMTP service
             if args.smtp or args.all:
                 smtp_factory = SMTPFactory()
                 reactor.listenTCP(25, smtp_factory)
                 logger.info("SMTP honeypot started on port 25")
 
+            # Start POP3 service
             if args.pop3 or args.all:
                 pop3_factory = POP3Factory(debug=args.debug)
                 reactor.listenTCP(110, pop3_factory)
@@ -156,9 +191,9 @@ def main():
 
             logger.info("Reactor is running...")
             reactor.run()
+
         except Exception as e:
             logger.error(f"Failed to start honeypot: {e}")
-
     else:
         parser.print_help()
 

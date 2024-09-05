@@ -2,8 +2,7 @@ import os
 import shutil
 from halo import Halo
 import configparser
-from ai_services import validate_openai_key
-from ai_services import query_ai_service_for_responses
+from ai_services import validate_openai_key, query_ai_service_for_responses
 
 def run_config_wizard(args, config, config_file_path):
     """Runs the configuration wizard to set up the honeypot."""
@@ -50,7 +49,7 @@ def run_config_wizard(args, config, config_file_path):
 
         # Validate the OpenAI key before proceeding
         with Halo(text="Validating OpenAI API key...", spinner='dots') as spinner:
-            if not validate_openai_key(openai_key, ai_service):
+            if not validate_openai_key(openai_key):
                 spinner.fail("Invalid OpenAI API key. Exiting.")
                 return
             spinner.succeed("API key is valid.")
@@ -139,4 +138,4 @@ def run_config_wizard(args, config, config_file_path):
             spinner.fail(f"Failed to save configuration: {e}")
 
     if provider != 'offline':
-        query_ai_service_for_responses(technology, segment, domain, anonymous_access, ai_service)
+        query_ai_service_for_responses(technology, segment)
