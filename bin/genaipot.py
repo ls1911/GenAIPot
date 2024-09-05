@@ -133,6 +133,20 @@ def run_config_wizard():
             print(f"Config file not found at {config_src}")
         return
 
+    # Check if config.ini already exists
+    if os.path.exists(config_file_path):
+        overwrite = input("A configuration file already exists. Do you want to overwrite it? (y/n): ").lower()
+        if overwrite != 'y':
+            print("Exiting without changing configuration.")
+            return
+    
+    # Check if 'files/' directory already exists with generated files
+    if os.path.exists('files') and os.listdir('files'):
+        overwrite_files = input("AI-generated files already exist. Do you want to overwrite them? (y/n): ").lower()
+        if overwrite_files != 'y':
+            print("Exiting without changing AI-generated files.")
+            return
+
     # Ask the user to select the AI provider
     provider_choice = input("Choose the AI provider to use:\n"
                             "1. OpenAI\n"
@@ -144,6 +158,14 @@ def run_config_wizard():
     if provider_choice == '1':
         provider = 'openai'
         openai_key = input("Enter your OpenAI API key: ")
+
+        # Validate the OpenAI key before proceeding
+        with Halo(text="Validating OpenAI API key...", spinner='dots') as spinner:
+            if not validate_openai_key(openai_key):
+                spinner.fail("Invalid OpenAI API key. Exiting.")
+                return
+            spinner.succeed("API key is valid.")
+        
         if not config.has_section('openai'):
             config.add_section('openai')
         config.set('openai', 'api_key', openai_key)
@@ -152,6 +174,8 @@ def run_config_wizard():
         provider = 'azure'
         azure_key = input("Enter your Azure OpenAI API key: ")
         azure_endpoint = input("Enter your Azure OpenAI endpoint: ")
+
+        # Assuming we also want to validate the Azure OpenAI key (validation logic should be added)
         if not config.has_section('azure'):
             config.add_section('azure')
         config.set('azure', 'api_key', azure_key)
@@ -163,6 +187,7 @@ def run_config_wizard():
         gcp_project = input("Enter your Google Project ID: ")
         gcp_location = input("Enter your Google Location: ")
         gcp_model_id = input("Enter your Google Model ID: ")
+
         if not config.has_section('gcp'):
             config.add_section('gcp')
         config.set('gcp', 'api_key', gcp_key)
@@ -189,15 +214,22 @@ def run_config_wizard():
         config.add_section('server')
 
     # Configure honeypot with inputs
-    technology = input("Choose the server technology to emulate:\n"
-                       "1. sendmail\n"
-                       "2. exchange\n"
-                       "3. qmail\n"
-                       "4. postfix\n"
-                       "5. zimbra\n"
-                       "6. other\n"
-                       "Enter the number of your choice: ")
-    technology = {'1': 'sendmail', '2': 'exchange', '3': 'qmail', '4': 'postfix', '5': 'zimbra', '6': 'other'}.get(technology, 'generic')
+    technology_choice = input("Choose the server technology to emulate:\n"
+                              "a. sendmail\n"
+                              "b. exchange\n"
+                              "c. qmail\n"
+                              "d. postfix\n"
+                              "e. zimbra\n"
+                              "f. other\n"
+                              "Enter the letter of your choice: ")
+    technology = {
+        'a': 'sendmail',
+        'b': 'exchange',
+        'c': 'qmail',
+        'd': 'postfix',
+        'e': 'zimbra',
+        'f': 'other'
+    }.get(technology_choice.lower(), 'generic')  # Default to 'generic' if invalid input
     
     segment = input("Enter the segment (industry description): ")
     domain = input("Enter the domain name (fictional company): ")
@@ -219,6 +251,16 @@ def run_config_wizard():
 
     if provider != 'offline':
         query_ai_service_for_responses(technology, segment, domain, anonymous_access)
+
+
+def validate_openai_key(api_key):
+    """Validate the OpenAI API key by making a simple API call."""
+    try:
+        ai_service.validate_key()  # Moved the validation to the service class
+        return True
+    except Exception as e:
+        print(f"OpenAI API key validation failed: {e}")
+        return False
 
 def query_ai_service_for_responses(technology, segment, domain, anonymous_access):
     """
