@@ -5,7 +5,7 @@ import configparser
 from ai_services import validate_openai_key
 from ai_services import query_ai_service_for_responses
 
-def run_config_wizard(args, config, config_file_path, ai_service):
+def run_config_wizard(args, config, config_file_path):
     """Runs the configuration wizard to set up the honeypot."""
     if args.docker:
         print("Using Docker mode. Copying default configuration files without prompting.")
