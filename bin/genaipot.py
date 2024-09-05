@@ -111,23 +111,60 @@ def run_config_wizard():
             print(f"Config file not found at {config_src}")
         return
 
-    openai_key = input("Enter your OpenAI API key: ")
+    # Ask the user to select the AI provider
+    provider_choice = input("Choose the AI provider to use:\n"
+                            "1. OpenAI\n"
+                            "2. Azure OpenAI\n"
+                            "3. Google Vertex AI\n"
+                            "4. Offline (use pre-existing templates)\n"
+                            "Enter the number of your choice: ")
 
-    # Use spinner for key verification
-    spinner = Halo(text='Verifying A.I key...', spinner='dots')
-    spinner.start()
-    if not validate_openai_key(openai_key):
-        spinner.fail("Invalid API key provided.")
-        use_default = input("Do you want to use default template files instead? (y/n): ").lower() == 'y'
-        if use_default:
-            # Copy default template files
-            for filename in os.listdir('var/no_ai'):
-                shutil.copyfile(os.path.join('var/no_ai', filename), os.path.join('files', filename))
-            print("Default template files have been copied.")
-        else:
-            print("Exiting. Please provide a valid API key.")
-            exit(1)
-    spinner.succeed("API key validated.")
+    if provider_choice == '1':
+        provider = 'openai'
+        openai_key = input("Enter your OpenAI API key: ")
+        if not config.has_section('openai'):
+            config.add_section('openai')
+        config.set('openai', 'api_key', openai_key)
+
+    elif provider_choice == '2':
+        provider = 'azure'
+        azure_key = input("Enter your Azure OpenAI API key: ")
+        azure_endpoint = input("Enter your Azure OpenAI endpoint: ")
+        if not config.has_section('azure'):
+            config.add_section('azure')
+        config.set('azure', 'api_key', azure_key)
+        config.set('azure', 'endpoint', azure_endpoint)
+
+    elif provider_choice == '3':
+        provider = 'gcp'
+        gcp_key = input("Enter your Google Vertex AI API key: ")
+        gcp_project = input("Enter your Google Project ID: ")
+        gcp_location = input("Enter your Google Location: ")
+        gcp_model_id = input("Enter your Google Model ID: ")
+        if not config.has_section('gcp'):
+            config.add_section('gcp')
+        config.set('gcp', 'api_key', gcp_key)
+        config.set('gcp', 'project', gcp_project)
+        config.set('gcp', 'location', gcp_location)
+        config.set('gcp', 'model_id', gcp_model_id)
+
+    elif provider_choice == '4':
+        provider = 'offline'
+        print("Using offline mode with pre-existing configuration.")
+    else:
+        print("Invalid choice. Please run the configuration wizard again.")
+        exit(1)
+
+    # Ensure the 'ai' section exists before adding keys
+    if not config.has_section('ai'):
+        config.add_section('ai')
+
+    # Set the chosen provider
+    config.set('ai', 'provider', provider)
+
+    # Ensure the 'server' section exists before adding configuration
+    if not config.has_section('server'):
+        config.add_section('server')
 
     # Configure honeypot with inputs
     technology = input("Choose the server technology to emulate:\n"
@@ -145,7 +182,6 @@ def run_config_wizard():
     anonymous_access = input("Allow anonymous access? (y/n): ").lower() == 'y'
 
     # Update the config file
-    config.set('ai', 'api_key', openai_key)
     config.set('server', 'technology', technology)
     config.set('server', 'segment', segment)
     config.set('server', 'domain', domain)
@@ -155,8 +191,10 @@ def run_config_wizard():
         config.write(configfile)
     print("Configuration has been saved.")
 
-    query_ai_service_for_responses(technology, segment, domain, anonymous_access)
-
+    if provider != 'offline':
+        query_ai_service_for_responses(technology, segment, domain, anonymous_access)
+        
+    
 def query_ai_service_for_responses(technology, segment, domain, anonymous_access):
     """
     Query the AI service for SMTP and POP3 responses and sample emails.
@@ -204,15 +242,31 @@ def main():
         run_config_wizard()
         return
 
-    # Check for the presence of an OpenAI API key or 'no_ai' setting
-    api_key = config.get('ai', 'api_key', fallback='')
+    # Check which AI provider to use
+    provider = config.get('ai', 'provider', fallback='offline')
     
-    if api_key == 'no_ai':
-        print("Using default templates as no valid A.I key is set.")
-    elif not validate_openai_key(api_key):
-        print("No valid A.I key found. Please run the configuration wizard to set up the necessary key.")
-        run_config_wizard()
-        return
+    if provider == 'openai':
+        api_key = config.get('openai', 'api_key', fallback=None)
+        ai_service = OpenAIService(api_key=api_key, debug_mode=args.debug)
+    elif provider == 'azure':
+        api_key = config.get('azure', 'api_key', fallback=None)
+        endpoint = config.get('azure', 'endpoint', fallback=None)
+        ai_service = AzureAIService(azure_openai_key=api_key, azure_openai_endpoint=endpoint, debug_mode=args.debug)
+    elif provider == 'gcp':
+        api_key = config.get('gcp', 'api_key', fallback=None)
+        project = config.get('gcp', 'project', fallback=None)
+        location = config.get('gcp', 'location', fallback=None)
+        model_id = config.get('gcp', 'model_id', fallback=None)
+        ai_service = GCPService(gcp_project=project, gcp_location=location, gcp_model_id=model_id, debug_mode=args.debug)
+    elif provider == 'offline':
+        print("Using offline mode with pre-existing templates.")
+        ai_service = None  # No AI service is used in offline mode
+    else:
+        print("Invalid AI provider specified in config. Exiting.")
+        exit(1)
+
+    if ai_service is not None:
+        validate_openai_key(api_key)
 
     if args.smtp or args.pop3 or args.all:
         try:
