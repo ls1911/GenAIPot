@@ -1,49 +1,21 @@
 import openai
-from ai.gcp_service import GCPService
-from ai.openai_service import OpenAIService
-from ai.azure_service import AzureAIService
+from google.cloud import aiplatform
+from google.cloud.aiplatform.gapic.schema import predict
+from google.protobuf import json_format
 import os
 import configparser
+import logging
+import time
+import json
 
-class AIService:
-    """
-    AIService handles interactions with multiple AI services (OpenAI, GCP, Azure).
-    """
-    
-    def __init__(self, api_key=None, service_type="openai", debug_mode=False):
-        self.api_key = api_key
-        self.service_type = service_type
-        self.debug_mode = debug_mode
-        
-        # Initialize the appropriate service based on the type
-        if service_type == "openai":
-            self.service = OpenAIService(api_key, debug_mode)
-        elif service_type == "gcp":
-            self.service = GCPService(api_key, debug_mode)
-        elif service_type == "azure":
-            self.service = AzureAIService(api_key, debug_mode)
-        else:
-            raise ValueError(f"Unsupported service type: {service_type}")
-    
-    def query_responses(self, prompt, response_type):
-        """
-        Query the selected AI service based on the initialized service type.
+# Setup logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.ERROR)  # Default to ERROR level
 
-        Args:
-            prompt (str): The prompt to send to the AI service.
-            response_type (str): The expected response type (e.g., "email").
-        
-        Returns:
-            str: The response from the AI service.
-        """
-        return self.service.query_responses(prompt, response_type)
-    
-    def validate_key(self):
-        """
-        Validate the API key for the selected AI service.
-        """
-        return self.service.validate_key()
-
+# Load the config.ini file
+config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'config.ini'))
+config = configparser.ConfigParser()
+config.read(config_file_path)
 
 def validate_openai_key(api_key):
     """
@@ -52,7 +24,7 @@ def validate_openai_key(api_key):
 
     Args:
         api_key (str): The OpenAI API key.
-    
+
     Returns:
         bool: True if the API key is valid, False otherwise.
     """
@@ -62,12 +34,256 @@ def validate_openai_key(api_key):
     try:
         openai.api_key = api_key
         # Validate by calling a simple API (e.g., listing available engines)
-        openai.Engine.list()
-        print("✔ API key validated.")
+        openai.Engine.list()        
         return True
     except Exception as e:
-        print(f"✘ Invalid OpenAI API key: {e}")
-        return False
+        err=(f"Invalid OpenAI API key: {e}")        
+        return (err)
+
+class AIService:
+    """
+    AIService handles interactions with multiple AI services (OpenAI, GCP, and Azure).
+
+    Attributes:
+        technology (str): The technology field from the config.
+        domain (str): The domain field from the config.
+        segment (str): The segment field from the config.
+        anonymous_access (bool): The anonymous access field from the config.
+        debug_mode (bool): Flag for enabling debug mode.
+        gcp_project (str): GCP project ID for Gemini API Vertex.
+        gcp_location (str): GCP location for Gemini API Vertex.
+        gcp_model_id (str): Model ID for Gemini API Vertex.
+    """
+
+    def __init__(self, api_key=False, gcp_project=None, gcp_location=None, gcp_model_id=None, debug_mode=False):
+        """
+        Initialize AIService with API key for OpenAI, and GCP project details for Gemini API Vertex.
+
+        Args:
+            api_key (str): The API key for OpenAI.
+            gcp_project (str): GCP project ID for Gemini API Vertex.
+            gcp_location (str): GCP location for Gemini API Vertex.
+            gcp_model_id (str): Model ID for Gemini API Vertex.
+            debug_mode (bool): If True, enables debug logging.
+        """
+        self.technology = config.get('server', 'technology', fallback='generic')
+        self.domain = config.get('server', 'domain', fallback='localhost')
+        self.segment = config.get('server', 'segment', fallback='general')
+        self.anonymous_access = config.getboolean('server', 'anonymous_access', fallback=False)
+
+        openai.api_key = api_key  # Set the API key directly
+        
+        self.gcp_project = gcp_project
+        self.gcp_location = gcp_location
+        self.gcp_model_id = gcp_model_id
+        self.debug_mode = debug_mode
+
+        if self.debug_mode:
+            logging.getLogger('ai_services').setLevel(logging.DEBUG)
+            logging.getLogger('urllib3').setLevel(logging.DEBUG)
+        else:
+            logging.getLogger('ai_services').setLevel(logging.CRITICAL)
+            logging.getLogger('urllib3').setLevel(logging.CRITICAL)
+
+    def query_responses(self, prompt, response_type, use_openai=True):
+        """
+        Query AI services (OpenAI or Google Gemini Vertex) for responses based on the provided prompt and response type.
+
+        Args:
+            prompt (str): The prompt to send to the AI service.
+            response_type (str): The type of response expected (e.g., "email").
+            use_openai (bool): Whether to use OpenAI (True) or Gemini Vertex (False).
+
+        Returns:
+            str: The response text from the AI service.
+        """
+        if use_openai:
+            return self._query_openai(prompt, response_type)
+        else:
+            return self._query_gcp_gemini(prompt, response_type)
+
+    def _query_openai(self, prompt, response_type):
+        """
+        Query OpenAI's API for a response to the provided prompt.
+
+        Args:
+            prompt (str): The prompt to send to OpenAI.
+            response_type (str): The type of response expected (e.g., "email").
+
+        Returns:
+            str: The response text from OpenAI, or an empty string if there was an error.
+        """
+        for attempt in range(2):
+            try:
+                if self.debug_mode:
+                    logger.debug(f"Querying OpenAI for {response_type} responses...")
+                response = openai.ChatCompletion.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=500
+                )
+                response_text = response.choices[0]['message']['content'].strip()
+                self._save_raw_response(response_text, response_type)
+                return response_text
+            except Exception as e:
+                if self.debug_mode:
+                    logger.error(f"Error querying OpenAI (attempt {attempt+1}/2): {e}")
+                if attempt == 1:
+                    logger.critical("Failed to communicate with AI after 2 attempts. Exiting.")
+                time.sleep(1)
+        return ""
+
+    def _query_gcp_gemini(self, prompt, response_type):
+        """
+        Query Google's Gemini API Vertex for a response to the provided prompt.
+
+        Args:
+            prompt (str): The prompt to send to Google Gemini API.
+            response_type (str): The type of response expected (e.g., "email").
+
+        Returns:
+            str: The response text from Google Gemini Vertex, or an empty string if there was an error.
+        """
+        try:
+            if self.debug_mode:
+                logger.debug(f"Querying Google Gemini Vertex for {response_type} responses...")
+            
+            client = aiplatform.gapic.PredictionServiceClient()
+            endpoint = f"projects/{self.gcp_project}/locations/{self.gcp_location}/endpoints/{self.gcp_model_id}"
+
+            instances = [{"content": prompt}]
+            parameters = {}
+            request = predict.instance.PredictRequest(
+                endpoint=endpoint,
+                instances=[json_format.ParseDict(instances, predict.instance.Value())],
+                parameters=json_format.ParseDict(parameters, predict.instance.Value()),
+            )
+            response = client.predict(request=request)
+            response_text = response.predictions[0].get("content", "").strip()
+            self._save_raw_response(response_text, response_type)
+            return response_text
+        except Exception as e:
+            if self.debug_mode:
+                logger.error(f"Error querying Google Gemini Vertex: {e}")
+            return ""
+
+    def _save_raw_response(self, response_text, response_type):
+        """
+        Save the raw response text to a file.
+
+        Args:
+            response_text (str): The response text from the AI service.
+            response_type (str): The type of response (e.g., "email").
+        """
+        filename = f'files/{response_type}_raw_response.txt'
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(response_text)
+        if self.debug_mode:
+            logger.debug(f"Raw response saved in {filename}")
+
+    def _store_responses(self, responses, response_type):
+        """
+        Store the parsed responses in a JSON file.
+
+        Args:
+            responses (dict): The parsed responses.
+            response_type (str): The type of response (e.g., "email").
+        """
+        filename = f'files/{response_type}_responses.json'
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(responses, f)
+        if self.debug_mode:
+            logger.debug(f"Responses stored in {filename}")
+
+    def load_responses(self, response_type):
+        """
+        Load responses from a saved file.
+
+        Args:
+            response_type (str): The type of response (e.g., "email").
+
+        Returns:
+            str: The loaded response text.
+        """
+        filename = f'files/{response_type}_raw_response.txt'
+        if os.path.exists(filename):
+            with open(filename, 'r', encoding='utf-8') as f:
+                return f.read()
+        return "No responses available"
+
+    def cleanup_and_parse_json(self, text):
+        """
+        Clean up and parse a JSON string from text.
+
+        Args:
+            text (str): The text containing JSON.
+
+        Returns:
+            dict: The parsed JSON object, or an empty dict if parsing fails.
+        """
+        try:
+            start = text.find('{')
+            end = text.rfind('}') + 1
+            if start == -1 or end == 0:
+                if self.debug_mode:
+                    logger.error("Invalid JSON structure detected.")
+                    logger.debug(f"Raw text: {text}")
+                return {}
+
+            json_text = text[start:end]
+            return json.loads(json_text)
+        except json.JSONDecodeError as e:
+            if self.debug_mode:
+                logger.error(f"Error parsing JSON response: {e}")
+                logger.debug(f"Raw text for cleanup: {text}")
+            return {}
+
+    def generate_emails(self, segment, domain, email_num):
+        """
+        Generate a sample email related to the given segment and domain.
+
+        This method uses the OpenAI API to generate a sample email, including
+        the subject, body, and recipient address. The email content is saved
+        to a file for later use.
+
+        Args:
+            segment (str): The segment or topic of the email.
+            domain (str): The domain to use for the email address.
+            email_num (int): The identifier number for the email.
+
+        Returns:
+            str: The generated email content.
+        """
+        try:
+            prompt = (
+                f"Generate an email related to the segment: {segment} for the domain {domain}. "
+                f"The email should include a subject, body, and a recipient address at the domain."
+            )
+            response = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=500
+            )
+            response_text = response.choices[0]['message']['content'].strip()
+
+            # Save the raw response to a file
+            filename = f'files/email{email_num}_raw_response.txt'
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write(response_text)
+            if self.debug_mode:
+                logger.debug(f"Raw response saved in {filename}")
+
+            return response_text
+        except Exception as e:
+            if self.debug_mode:
+                logger.error(f"Error querying OpenAI for email {email_num}: {e}")
+            return "No response"
 
 
 def query_ai_service_for_responses(technology, segment):
@@ -92,16 +308,18 @@ def query_ai_service_for_responses(technology, segment):
         prompts.get('Prompts', 'internal_email_prompt').format(segment=segment)
     ]
 
+    ai_service = AIService()  # Initialize AIService as needed
+
     try:
         smtp_response = ai_service.query_responses(smtp_prompt, "smtp")
-        save_raw_response(smtp_response, "smtp")
+        ai_service._save_raw_response(smtp_response, "smtp")
         print("✔ SMTP responses generated successfully.")
     except Exception as e:
         print(f"✘ Failed to generate SMTP responses: {e}")
 
     try:
         pop3_response = ai_service.query_responses(pop3_prompt, "pop3")
-        save_raw_response(pop3_response, "pop3")
+        ai_service._save_raw_response(pop3_response, "pop3")
         print("✔ POP3 responses generated successfully.")
     except Exception as e:
         print(f"✘ Failed to generate POP3 responses: {e}")
@@ -109,7 +327,7 @@ def query_ai_service_for_responses(technology, segment):
     for i, email_prompt in enumerate(email_prompts, 1):
         try:
             email_response = ai_service.query_responses(email_prompt, f"email_{i}")
-            save_raw_response(email_response, f"email_{i}")
+            ai_service._save_raw_response(email_response, f"email_{i}")
             print(f"✔ Sample email {i} generated successfully.")
         except Exception as e:
             print(f"✘ Failed to generate email {i}: {e}")

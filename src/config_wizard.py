@@ -48,11 +48,15 @@ def run_config_wizard(args, config, config_file_path):
         openai_key = input("Enter your OpenAI API key: ")
 
         # Validate the OpenAI key before proceeding
+        #         
         with Halo(text="Validating OpenAI API key...", spinner='dots') as spinner:
-            if not validate_openai_key(openai_key):
-                spinner.fail("Invalid OpenAI API key. Exiting.")
+            a=validate_openai_key(openai_key)               
+            if a != True:
+                spinner.fail(a)                
+                exit(":(")               
                 return
-            spinner.succeed("API key is valid.")
+            else:
+                spinner.succeed("API key is valid.")
         
         if not config.has_section('openai'):
             config.add_section('openai')

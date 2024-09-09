@@ -27,10 +27,10 @@ class OpenAIService:
             logging.info("OpenAI API key is valid.")
             return True
         except openai.error.AuthenticationError:
-            logging.error("Invalid OpenAI API key.")
+            logging.info("Invalid OpenAI API key.")
             return False
         except Exception as e:
-            logging.error(f"Error validating OpenAI API key: {e}")
+            logging.info(f"Error validating OpenAI API key: {e}")
             return False
 
     def query_responses(self, prompt, response_type):
