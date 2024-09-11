@@ -2,7 +2,7 @@ import os
 import shutil
 from halo import Halo
 import configparser
-from ai_services import validate_openai_key, query_ai_service_for_responses
+from ai_services import validate_openai_key, query_ai_service_for_responses, AIService  # Use AIService
 
 def run_config_wizard(args, config, config_file_path):
     """Runs the configuration wizard to set up the honeypot."""
@@ -43,35 +43,39 @@ def run_config_wizard(args, config, config_file_path):
                             "4. Offline (use pre-existing templates)\n"
                             "Enter the number of your choice: ")
 
+    ai_service = None  # Initialize the ai_service variable
+    
     if provider_choice == '1':
         provider = 'openai'
         openai_key = input("Enter your OpenAI API key: ")
 
-        # Validate the OpenAI key before proceeding
-        #         
+        # Validate the OpenAI key before proceeding        
         with Halo(text="Validating OpenAI API key...", spinner='dots') as spinner:
-            a=validate_openai_key(openai_key)               
-            if a != True:
-                spinner.fail(a)                
-                exit(":(")               
-                return
+            if not validate_openai_key(openai_key):
+                spinner.fail("Invalid API key.")
+                exit(1)
             else:
                 spinner.succeed("API key is valid.")
-        
+
         if not config.has_section('openai'):
             config.add_section('openai')
         config.set('openai', 'api_key', openai_key)
+
+        # Initialize AIService for querying later (generic service class)
+        ai_service = AIService(api_key=openai_key, debug_mode=args.debug)  # Removed 'provider'
 
     elif provider_choice == '2':
         provider = 'azure'
         azure_key = input("Enter your Azure OpenAI API key: ")
         azure_endpoint = input("Enter your Azure OpenAI endpoint: ")
 
-        # Assuming we also want to validate the Azure OpenAI key (validation logic should be added)
         if not config.has_section('azure'):
             config.add_section('azure')
         config.set('azure', 'api_key', azure_key)
         config.set('azure', 'endpoint', azure_endpoint)
+
+        # Initialize AIService for querying later
+        ai_service = AIService(api_key=azure_key, endpoint=azure_endpoint, debug_mode=args.debug)  # Removed 'provider'
 
     elif provider_choice == '3':
         provider = 'gcp'
@@ -86,6 +90,9 @@ def run_config_wizard(args, config, config_file_path):
         config.set('gcp', 'project', gcp_project)
         config.set('gcp', 'location', gcp_location)
         config.set('gcp', 'model_id', gcp_model_id)
+
+        # Initialize AIService for querying later
+        ai_service = AIService(api_key=gcp_key, project=gcp_project, location=gcp_location, model_id=gcp_model_id, debug_mode=args.debug)  # Removed 'provider'
 
     elif provider_choice == '4':
         provider = 'offline'
@@ -141,5 +148,6 @@ def run_config_wizard(args, config, config_file_path):
         except Exception as e:
             spinner.fail(f"Failed to save configuration: {e}")
 
-    if provider != 'offline':
-        query_ai_service_for_responses(technology, segment)
+    # Query the AI service for responses if not in offline mode
+    if provider != 'offline' and ai_service:
+        query_ai_service_for_responses(technology, segment, domain, anonymous_access, args.debug, ai_service)

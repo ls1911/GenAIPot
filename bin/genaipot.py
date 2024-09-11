@@ -3,6 +3,7 @@ import argparse
 import os
 import sys
 import configparser
+import datetime
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))  # Adjusted path
 
@@ -54,22 +55,6 @@ def ensure_files_directory():
     """Ensure the existence of the 'files' directory."""
     if not os.path.exists('files'):
         os.makedirs('files')
-
-def validate_openai_key(api_key, ai_service):
-    """Validate the OpenAI API key by making a simple API call."""
-    try:
-        print ("start")
-        spinner = Halo(text='Validating OpenAI API key', spinner='dots')
-        spinner.start()
-        if ai_service.validate_key():
-            spinner.succeed("API key is valid11.")
-            return True
-        else:
-            spinner.fail("API key validation failed, try again.")            
-            return False
-    except Exception as e:
-        spinner.fail(f"API key validation failed: {e}")
-        return False
 
 def query_ai_service_for_responses(technology, segment, domain, anonymous_access, debug_mode, ai_service):
     """
@@ -165,17 +150,50 @@ def initialize_ai_service(config, args):
         print("Invalid AI provider specified in config. Exiting.")
         exit(1)
 
+import argparse
+import logging
+import datetime
+import art
+
 def main():
     """Main function to run the GenAIPot honeypot services."""
+    
+    # Initialize argument parser
+    parser = argparse.ArgumentParser(description="GenAIPot - A honeypot simulation tool")
+    parser.add_argument('--config', action='store_true', help='Configure the honeypot with AI-generated responses')
+    parser.add_argument('--docker', action='store_true', help='Use default config for Docker deployment')
+    parser.add_argument('--smtp', action='store_true', help='Start SMTP honeypot')
+    parser.add_argument('--pop3', action='store_true', help='Start POP3 honeypot')
+    parser.add_argument('--all', action='store_true', help='Start all honeypots')
+    parser.add_argument('--debug', action='store_true', help='Enable debug mode')
+    args = parser.parse_args()
+
+    # Set up logging based on the debug flag
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.DEBUG)
+    else:
+        # Ensure that at least the basic info is printed if --debug is not used
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.INFO)
+
+    # Always print logo and version information
+    Art = art.text2art("Gen.A.I.Pot")
+    print(Art)
+    print(f"Version: {VERSION}")
+    print("The first Generative A.I Honeypot")
+
+    # If no arguments are provided or --help is used, show the help menu
+    if not any(vars(args).values()) or len(vars(args)) == 0:
+        parser.print_help()
+        return
+
     ensure_files_directory()
 
     # Set up the database
     setup_database()
-
-    Art = art.text2art("GenAIPot")
-    print(Art)
-    print(f"Version: {VERSION}")
-    print("The first Generative A.I Honeypot")
 
     # If --config or --docker is specified, run the configuration wizard
     if args.config or args.docker:
@@ -183,6 +201,8 @@ def main():
         
         # Re-read the config after configuration
         config.read(config_file_path)
+        # No need to print the help menu after running the config wizard
+        return
 
     # Check which AI provider to use
     provider = config.get('ai', 'provider', fallback='offline')
@@ -190,23 +210,18 @@ def main():
     # Initialize the appropriate AI service based on the provider chosen
     ai_service = initialize_ai_service(config, args)
 
-    # Validate the AI service if applicable    
-    # if isinstance(ai_service, OpenAIService) and provider != 'offline':
-        # validate_openai_key(config.get('openai', 'api_key', fallback=None), ai_service)
-
     # If SMTP, POP3, or both services are selected, start them
     if args.smtp or args.pop3 or args.all:
         try:
-            print("\n")
             logger.info(f"Starting GenAIPot Version {VERSION}")
             if args.debug:
                 start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                logger.info(f"Start Time: {start_time}")
-                logger.info(f"IP: {config.get('server', 'ip', fallback='localhost')}")
-                logger.info(f"Listening Ports: {', '.join(['25', '110']) if args.all else ('25' if args.smtp else '110')}")
-                logger.info(f"SQLite Logging Enabled: {config.getboolean('logging', 'sqlite', fallback=True)}")
-                logger.info(f"Server Technology: {config.get('server', 'technology', fallback='generic')}")
-                logger.info(f"Domain Name: {config.get('server', 'domain', fallback='localhost')}")
+                logger.debug(f"Start Time: {start_time}")
+                logger.debug(f"IP: {config.get('server', 'ip', fallback='localhost')}")
+                logger.debug(f"Listening Ports: {', '.join(['25', '110']) if args.all else ('25' if args.smtp else '110')}")
+                logger.debug(f"SQLite Logging Enabled: {config.getboolean('logging', 'sqlite', fallback=True)}")
+                logger.debug(f"Server Technology: {config.get('server', 'technology', fallback='generic')}")
+                logger.debug(f"Domain Name: {config.get('server', 'domain', fallback='localhost')}")
                 logging.getLogger('urllib3').setLevel(logging.DEBUG)
 
             # Start SMTP service
@@ -227,6 +242,7 @@ def main():
         except Exception as e:
             logger.error(f"Failed to start honeypot: {e}")
     else:
+        # If no specific honeypot service is selected, show the help menu
         parser.print_help()
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ import configparser
 import logging
 import time
 import json
+from halo import Halo
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -28,6 +29,7 @@ def validate_openai_key(api_key):
     Returns:
         bool: True if the API key is valid, False otherwise.
     """
+
     if not api_key:
         raise ValueError("OpenAI API key is missing.")
     
@@ -38,7 +40,7 @@ def validate_openai_key(api_key):
         return True
     except Exception as e:
         err=(f"Invalid OpenAI API key: {e}")        
-        return (err)
+        return False
 
 class AIService:
     """
@@ -285,49 +287,90 @@ class AIService:
                 logger.error(f"Error querying OpenAI for email {email_num}: {e}")
             return "No response"
 
+import logging
 
-def query_ai_service_for_responses(technology, segment):
+def query_ai_service_for_responses(technology, segment, domain, anonymous_access, debug_mode, ai_service):
     """
     Query the AI service for SMTP and POP3 responses and sample emails.
 
     Args:
         technology (str): The technology used (e.g., sendmail, exchange).
         segment (str): The segment of the industry or application.
+        domain (str): The domain name for the service.
+        anonymous_access (bool): Whether anonymous access is allowed.
+        debug_mode (bool): Whether to enable debug mode.
+        ai_service (AIService): The AI service to query (OpenAI, GCP, Azure).
     """
-    # Load prompts from prompts.ini
+
+    # Load prompts from prompts.ini configuration file
     prompts_config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'prompts.ini'))
+    
+    # Initialize configparser to read prompts
     prompts = configparser.ConfigParser()
     prompts.read(prompts_config_file_path)
 
+    # Check if the prompts configuration file has been loaded correctly
+    if not prompts.sections():
+        raise FileNotFoundError(f"Prompts configuration file not found at {prompts_config_file_path}")
+
+    # Load prompts for the responses
     smtp_prompt = prompts.get('Prompts', 'smtp_prompt').format(technology=technology)
     pop3_prompt = prompts.get('Prompts', 'pop3_prompt').format(technology=technology)
-
     email_prompts = [
-        prompts.get('Prompts', 'client_email_prompt').format(segment=segment),
-        prompts.get('Prompts', 'supplier_email_prompt').format(segment=segment),
-        prompts.get('Prompts', 'internal_email_prompt').format(segment=segment)
+        prompts.get('Prompts', 'client_email_prompt').format(segment=segment, domain=domain),
+        prompts.get('Prompts', 'supplier_email_prompt').format(segment=segment, domain=domain),
+        prompts.get('Prompts', 'internal_email_prompt').format(segment=segment, domain=domain)
     ]
 
-    ai_service = AIService()  # Initialize AIService as needed
+    # Function to log or print the data if debug mode is enabled
+    def log_debug_info(request_type, prompt, response):
+        if debug_mode:
+            logging.debug(f"Request ({request_type}): {prompt}")
+            logging.debug(f"Response ({request_type}): {response}")
 
+    # Try to get SMTP responses
     try:
-        smtp_response = ai_service.query_responses(smtp_prompt, "smtp")
-        ai_service._save_raw_response(smtp_response, "smtp")
-        print("✔ SMTP responses generated successfully.")
+        #if debug_mode:
+        spinner = Halo(text='Sending SMTP prompt to AI service...')
+        spinner.start()  # Start the spinner while processing
+        smtp_raw_response = ai_service.query_responses(smtp_prompt, "smtp")
+        log_debug_info("SMTP", smtp_prompt, smtp_raw_response)  # Log or print the SMTP request and response
+        smtp_cleaned_response = ai_service.cleanup_and_parse_json(smtp_raw_response)
+        ai_service._store_responses(smtp_cleaned_response, "smtp")
+        spinner.succeed("SMTP responses generated successfully.")
     except Exception as e:
-        print(f"✘ Failed to generate SMTP responses: {e}")
+        spinner.fail(f"Failed to communicate with AI for SMTP responses: {e}")
+        return
 
+    # Try to get POP3 responses
     try:
-        pop3_response = ai_service.query_responses(pop3_prompt, "pop3")
-        ai_service._save_raw_response(pop3_response, "pop3")
-        print("✔ POP3 responses generated successfully.")
-    except Exception as e:
-        print(f"✘ Failed to generate POP3 responses: {e}")
+            spinner = Halo(text='Sending POP3 prompt to AI service...', spinner='dots')    
+            spinner.start()  # Start the spinner while processing
+            pop3_raw_response = ai_service.query_responses(pop3_prompt, "pop3")
+            log_debug_info("POP3", pop3_prompt, pop3_raw_response)  # Log the POP3 request and response
 
+            # Cleanup and parse the response
+            pop3_cleaned_response = ai_service.cleanup_and_parse_json(pop3_raw_response)
+
+            # Store the parsed response
+            ai_service._store_responses(pop3_cleaned_response, "pop3")
+
+            spinner.succeed("POP3 responses generated successfully.")  # Show success
+    except Exception as e:
+            spinner.fail(f"Failed to communicate with AI for POP3 responses: {e}")  # Show failure
+            return
+
+    # Try to get email responses
     for i, email_prompt in enumerate(email_prompts, 1):
         try:
-            email_response = ai_service.query_responses(email_prompt, f"email_{i}")
-            ai_service._save_raw_response(email_response, f"email_{i}")
-            print(f"✔ Sample email {i} generated successfully.")
+            spinner = Halo(text=f"Sending email prompt #{i} to AI service...", spinner='dots')    
+            spinner.start()
+#            if debug_mode:
+                #logging.debug(f"Sending email prompt #{i} to AI service...")
+            email_raw_response = ai_service.query_responses(email_prompt, f"email_{i}")
+            log_debug_info(f"Email {i}", email_prompt, email_raw_response)  # Log or print the email request and response
+            email_cleaned_response = ai_service.cleanup_and_parse_json(email_raw_response)
+            #ai_service.save_email_responses(email_cleaned_response, f"email_{i}")
+            spinner.succeed(f"Sample email #{i} generated successfully.")
         except Exception as e:
-            print(f"✘ Failed to generate email {i}: {e}")
+            spinner.fail(f"Failed to communicate with AI for email #{i}: {e}")
