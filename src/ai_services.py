@@ -8,6 +8,7 @@ import logging
 import time
 import json
 from halo import Halo
+import requests
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -55,17 +56,21 @@ class AIService:
         gcp_project (str): GCP project ID for Gemini API Vertex.
         gcp_location (str): GCP location for Gemini API Vertex.
         gcp_model_id (str): Model ID for Gemini API Vertex.
+        azure_endpoint (str): Azure OpenAI endpoint.
+        azure_location (str): Azure OpenAI location/region.
     """
 
-    def __init__(self, api_key=False, gcp_project=None, gcp_location=None, gcp_model_id=None, debug_mode=False):
+    def __init__(self, api_key=False, gcp_project=None, gcp_location=None, gcp_model_id=None, azure_endpoint=None, azure_location=None, debug_mode=False):
         """
-        Initialize AIService with API key for OpenAI, and GCP project details for Gemini API Vertex.
+        Initialize AIService with API key for OpenAI, Azure, and GCP project details.
 
         Args:
-            api_key (str): The API key for OpenAI.
-            gcp_project (str): GCP project ID for Gemini API Vertex.
-            gcp_location (str): GCP location for Gemini API Vertex.
-            gcp_model_id (str): Model ID for Gemini API Vertex.
+            api_key (str): The API key for OpenAI or Azure.
+            gcp_project (str): GCP project ID for Google AI.
+            gcp_location (str): GCP location for Google AI.
+            gcp_model_id (str): Model ID for Google AI.
+            azure_endpoint (str): The Azure OpenAI API endpoint.
+            azure_location (str): The Azure OpenAI API location/region.
             debug_mode (bool): If True, enables debug logging.
         """
         self.technology = config.get('server', 'technology', fallback='generic')
@@ -78,6 +83,8 @@ class AIService:
         self.gcp_project = gcp_project
         self.gcp_location = gcp_location
         self.gcp_model_id = gcp_model_id
+        self.azure_endpoint = azure_endpoint  # New attribute for Azure OpenAI
+        self.azure_location = azure_location  # New attribute for Azure location
         self.debug_mode = debug_mode
 
         if self.debug_mode:
@@ -86,7 +93,7 @@ class AIService:
         else:
             logging.getLogger('ai_services').setLevel(logging.CRITICAL)
             logging.getLogger('urllib3').setLevel(logging.CRITICAL)
-
+    
     def query_responses(self, prompt, response_type, use_openai=True):
         """
         Query AI services (OpenAI or Google Gemini Vertex) for responses based on the provided prompt and response type.
@@ -331,7 +338,7 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
     # Try to get SMTP responses
     try:
         #if debug_mode:
-        spinner = Halo(text='Sending SMTP prompt to AI service...')
+        spinner = Halo(text='Generating SMTP responses with AI service.. (1/5)')
         spinner.start()  # Start the spinner while processing
         smtp_raw_response = ai_service.query_responses(smtp_prompt, "smtp")
         log_debug_info("SMTP", smtp_prompt, smtp_raw_response)  # Log or print the SMTP request and response
@@ -344,7 +351,7 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
 
     # Try to get POP3 responses
     try:
-            spinner = Halo(text='Sending POP3 prompt to AI service...', spinner='dots')    
+            spinner = Halo(text='Generating POP3 responses with AI service.. (2/5)', spinner='dots')    
             spinner.start()  # Start the spinner while processing
             pop3_raw_response = ai_service.query_responses(pop3_prompt, "pop3")
             log_debug_info("POP3", pop3_prompt, pop3_raw_response)  # Log the POP3 request and response
@@ -363,7 +370,8 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
     # Try to get email responses
     for i, email_prompt in enumerate(email_prompts, 1):
         try:
-            spinner = Halo(text=f"Sending email prompt #{i} to AI service...", spinner='dots')    
+            o=i+2
+            spinner = Halo(text=f"Sending email prompt #{i} to AI service.. ({o}/5)", spinner='dots')    
             spinner.start()
 #            if debug_mode:
                 #logging.debug(f"Sending email prompt #{i} to AI service...")
@@ -374,3 +382,38 @@ def query_ai_service_for_responses(technology, segment, domain, anonymous_access
             spinner.succeed(f"Sample email #{i} generated successfully.")
         except Exception as e:
             spinner.fail(f"Failed to communicate with AI for email #{i}: {e}")
+
+def validate_azure_key(api_key, endpoint, location):
+    """
+    Validate the Azure OpenAI API key by making a simple API call.
+    If valid, returns True; otherwise, returns False.
+
+    Args:
+        api_key (str): The Azure OpenAI API key.
+        endpoint (str): The Azure OpenAI endpoint.
+        location (str): The Azure OpenAI location/region.
+
+    Returns:
+        bool: True if the API key is valid, False otherwise.
+    """
+    headers = {
+        'api-key': api_key,
+        'Content-Type': 'application/json'
+    }
+    
+    # Form the URL for the API call, using the provided endpoint
+    url = f"{endpoint}/openai/deployments?api-version=2023-05-15"
+
+    try:
+        # Send a GET request to validate the key and endpoint
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+            print("✔ API key is valid.")
+            return True
+        else:
+            print(f"✘ API key validation failed. Status Code: {response.status_code}")
+            return False
+    except Exception as e:
+        print(f"✘ An error occurred while validating the API key: {e}")
+        return False

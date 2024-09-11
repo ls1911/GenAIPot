@@ -2,7 +2,8 @@ import os
 import shutil
 from halo import Halo
 import configparser
-from ai_services import validate_openai_key, query_ai_service_for_responses, AIService  # Use AIService
+from ai_services import validate_openai_key, validate_azure_key, query_ai_service_for_responses, AIService
+import requests
 
 def run_config_wizard(args, config, config_file_path):
     """Runs the configuration wizard to set up the honeypot."""
@@ -64,18 +65,29 @@ def run_config_wizard(args, config, config_file_path):
         # Initialize AIService for querying later (generic service class)
         ai_service = AIService(api_key=openai_key, debug_mode=args.debug)  # Removed 'provider'
 
-    elif provider_choice == '2':
+    if provider_choice == '2':
         provider = 'azure'
         azure_key = input("Enter your Azure OpenAI API key: ")
         azure_endpoint = input("Enter your Azure OpenAI endpoint: ")
+        azure_location = input("Enter your Azure OpenAI location/region: ")
 
+        # Validate the Azure API key and endpoint before proceeding
+        with Halo(text="Validating Azure OpenAI API key and endpoint...", spinner='dots') as spinner:
+            if not validate_azure_key(azure_key, azure_endpoint, azure_location):
+                spinner.fail("Invalid API key or endpoint.")
+                exit(1)
+            else:
+                spinner.succeed("API key and endpoint are valid.")
+
+        # Store configuration in the config file
         if not config.has_section('azure'):
             config.add_section('azure')
         config.set('azure', 'api_key', azure_key)
         config.set('azure', 'endpoint', azure_endpoint)
+        config.set('azure', 'location', azure_location)
 
         # Initialize AIService for querying later
-        ai_service = AIService(api_key=azure_key, endpoint=azure_endpoint, debug_mode=args.debug)  # Removed 'provider'
+        ai_service = AIService(api_key=azure_key, azure_endpoint=azure_endpoint, azure_location=azure_location, debug_mode=args.debug)
 
     elif provider_choice == '3':
         provider = 'gcp'
@@ -151,3 +163,4 @@ def run_config_wizard(args, config, config_file_path):
     # Query the AI service for responses if not in offline mode
     if provider != 'offline' and ai_service:
         query_ai_service_for_responses(technology, segment, domain, anonymous_access, args.debug, ai_service)
+
