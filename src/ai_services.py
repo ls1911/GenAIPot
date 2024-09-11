@@ -1,7 +1,7 @@
 import openai
-from google.cloud import aiplatform
-from google.cloud.aiplatform.gapic.schema import predict
-from google.protobuf import json_format
+# from google.cloud import aiplatform
+# from google.cloud.aiplatform.gapic.schema import predict
+# from google.protobuf import json_format
 import os
 import configparser
 import logging
@@ -156,6 +156,7 @@ class AIService:
         Returns:
             str: The response text from Google Gemini Vertex, or an empty string if there was an error.
         """
+        return()
         try:
             if self.debug_mode:
                 logger.debug(f"Querying Google Gemini Vertex for {response_type} responses...")
@@ -212,16 +213,25 @@ class AIService:
         Load responses from a saved file.
 
         Args:
-            response_type (str): The type of response (e.g., "email").
+            response_type (str): The type of response (e.g., "smtp").
 
         Returns:
-            str: The loaded response text.
+            dict or str: The loaded response as a JSON dictionary if valid, 
+                        otherwise returns the raw text as a string.
         """
         filename = f'files/{response_type}_raw_response.txt'
         if os.path.exists(filename):
             with open(filename, 'r', encoding='utf-8') as f:
-                return f.read()
-        return "No responses available"
+                try:
+                    # Try to parse the file as JSON
+                    return json.load(f)
+                except json.JSONDecodeError:
+                    # If parsing fails, return the raw text
+                    f.seek(0)  # Reset file pointer to the beginning
+                    raw_text = f.read()
+                    logger.error(f"Failed to parse {filename} as JSON. Returning raw text.")
+                    return raw_text
+        return {}  # Return empty dictionary if no file is found
 
     def cleanup_and_parse_json(self, text):
         """

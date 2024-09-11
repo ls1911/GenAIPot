@@ -1,8 +1,8 @@
 import logging
-from google.cloud import aiplatform
-from google.cloud.aiplatform.gapic.schema import predict
-from google.protobuf import json_format
-from utils import save_raw_response
+#from google.cloud import aiplatform
+#from google.cloud.aiplatform.gapic.schema import predict
+#from google.protobuf import json_format
+#from utils import save_raw_response
 
 class GCPService:
     def __init__(self, gcp_project=None, gcp_location=None, gcp_model_id=None, debug_mode=False):
