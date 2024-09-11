@@ -37,10 +37,10 @@ def run_config_wizard(args, config, config_file_path):
 
     # Ask the user to select the AI provider
     provider_choice = input("Choose the AI provider to use:\n"
-                            "1. OpenAI\n"
-                            "2. Azure OpenAI\n"
-                            "3. Google Vertex AI\n"
-                            "4. Offline (use pre-existing templates)\n"
+                            "1. OpenAI (Working)\n"
+                            "2. Azure OpenAI (Work In Progress)\n"
+                            "3. Google Vertex AI (Work In Progress)\n"
+                            "4. Offline (Use pre-existing templates)\n"
                             "Enter the number of your choice: ")
 
     ai_service = None  # Initialize the ai_service variable
@@ -64,7 +64,7 @@ def run_config_wizard(args, config, config_file_path):
         # Initialize AIService for querying later (generic service class)
         ai_service = AIService(api_key=openai_key, debug_mode=args.debug)  # Removed 'provider'
 
-    if provider_choice == '2':
+    elif provider_choice == '2':
         provider = 'azure'
         azure_key = input("Enter your Azure OpenAI API key: ")
         azure_endpoint = input("Enter your Azure OpenAI endpoint: ")
@@ -102,8 +102,8 @@ def run_config_wizard(args, config, config_file_path):
         config.set('gcp', 'location', gcp_location)
         config.set('gcp', 'model_id', gcp_model_id)
 
-        # Initialize AIService for querying later
-        exit ('Oh no!\nSnap!\nGoogle is charging us to develop integration with them!\nOther provider is recommended.\nIf you dont have other procider access try the offline mode!\nxoxo :-*')
+        # Exit with a message for unsupported integration
+        exit('Oh no!\nSnap!\nGoogle is charging us to develop integration with them!\nOther provider is recommended.\nIf you don’t have other provider access, try the offline mode!\nXOXO :-*')
 
     elif provider_choice == '4':
         provider = 'offline'
@@ -205,4 +205,3 @@ def run_config_wizard(args, config, config_file_path):
     # Query the AI service for responses if not in offline mode
     if provider != 'offline' and ai_service:
         query_ai_service_for_responses(technology, segment, domain, anonymous_access, args.debug, ai_service)
-
