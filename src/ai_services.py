@@ -1,51 +1,51 @@
-# Copyright (C) 2024 Nucleon Cyber. All rights reserved.
-#
-# This file is part of GenAIPot.
-#
-# GenAIPot is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# GenAIPot is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with GenAIPot. If not, see <http://www.gnu.org/licenses/>.
-#
-# For more information, visit: www.nucleon.sh or send email to contact[@]nucleon.sh
-#
-
-"""
-This module provides AI service functionalities for interacting with OpenAI's API and Google's Gemini API Vertex.
-It includes methods for querying responses, saving and loading responses,
-and updating configuration settings.
-"""
-
+import openai
+# from google.cloud import aiplatform
+# from google.cloud.aiplatform.gapic.schema import predict
+# from google.protobuf import json_format
+import os
 import configparser
 import logging
-import json
-import os
 import time
+import json
+from halo import Halo
+import requests
 
-import openai
-from google.cloud import aiplatform
-from google.cloud.aiplatform.gapic.schema import predict
-from google.protobuf import json_format
-
+# Setup logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.ERROR)  # Default to ERROR level
 
+# Load the config.ini file
 config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'config.ini'))
 config = configparser.ConfigParser()
 config.read(config_file_path)
 
+def validate_openai_key(api_key):
+    """
+    Validate the OpenAI API key by making a simple API call.
+    If valid, returns True; otherwise, raises an error.
+
+    Args:
+        api_key (str): The OpenAI API key.
+
+    Returns:
+        bool: True if the API key is valid, False otherwise.
+    """
+
+    if not api_key:
+        raise ValueError("OpenAI API key is missing.")
+    
+    try:
+        openai.api_key = api_key
+        # Validate by calling a simple API (e.g., listing available engines)
+        openai.Engine.list()        
+        return True
+    except Exception as e:
+        err=(f"Invalid OpenAI API key: {e}")        
+        return False
+
 class AIService:
     """
-    AIService class handles interactions with the OpenAI API and Google Gemini API Vertex,
-    including querying responses and managing configuration settings.
+    AIService handles interactions with multiple AI services (OpenAI, GCP, and Azure).
 
     Attributes:
         technology (str): The technology field from the config.
@@ -56,17 +56,21 @@ class AIService:
         gcp_project (str): GCP project ID for Gemini API Vertex.
         gcp_location (str): GCP location for Gemini API Vertex.
         gcp_model_id (str): Model ID for Gemini API Vertex.
+        azure_endpoint (str): Azure OpenAI endpoint.
+        azure_location (str): Azure OpenAI location/region.
     """
 
-    def __init__(self, api_key=False, gcp_project=None, gcp_location=None, gcp_model_id=None, debug_mode=False):
+    def __init__(self, api_key=False, gcp_project=None, gcp_location=None, gcp_model_id=None, azure_endpoint=None, azure_location=None, debug_mode=False):
         """
-        Initialize AIService with API key for OpenAI, and GCP project details for Gemini API Vertex.
+        Initialize AIService with API key for OpenAI, Azure, and GCP project details.
 
         Args:
-            api_key (str): The API key for OpenAI.
-            gcp_project (str): GCP project ID for Gemini API Vertex.
-            gcp_location (str): GCP location for Gemini API Vertex.
-            gcp_model_id (str): Model ID for Gemini API Vertex.
+            api_key (str): The API key for OpenAI or Azure.
+            gcp_project (str): GCP project ID for Google AI.
+            gcp_location (str): GCP location for Google AI.
+            gcp_model_id (str): Model ID for Google AI.
+            azure_endpoint (str): The Azure OpenAI API endpoint.
+            azure_location (str): The Azure OpenAI API location/region.
             debug_mode (bool): If True, enables debug logging.
         """
         self.technology = config.get('server', 'technology', fallback='generic')
@@ -79,6 +83,8 @@ class AIService:
         self.gcp_project = gcp_project
         self.gcp_location = gcp_location
         self.gcp_model_id = gcp_model_id
+        self.azure_endpoint = azure_endpoint  # New attribute for Azure OpenAI
+        self.azure_location = azure_location  # New attribute for Azure location
         self.debug_mode = debug_mode
 
         if self.debug_mode:
@@ -87,7 +93,7 @@ class AIService:
         else:
             logging.getLogger('ai_services').setLevel(logging.CRITICAL)
             logging.getLogger('urllib3').setLevel(logging.CRITICAL)
-
+    
     def query_responses(self, prompt, response_type, use_openai=True):
         """
         Query AI services (OpenAI or Google Gemini Vertex) for responses based on the provided prompt and response type.
@@ -106,6 +112,16 @@ class AIService:
             return self._query_gcp_gemini(prompt, response_type)
 
     def _query_openai(self, prompt, response_type):
+        """
+        Query OpenAI's API for a response to the provided prompt.
+
+        Args:
+            prompt (str): The prompt to send to OpenAI.
+            response_type (str): The type of response expected (e.g., "email").
+
+        Returns:
+            str: The response text from OpenAI, or an empty string if there was an error.
+        """
         for attempt in range(2):
             try:
                 if self.debug_mode:
@@ -130,6 +146,17 @@ class AIService:
         return ""
 
     def _query_gcp_gemini(self, prompt, response_type):
+        """
+        Query Google's Gemini API Vertex for a response to the provided prompt.
+
+        Args:
+            prompt (str): The prompt to send to Google Gemini API.
+            response_type (str): The type of response expected (e.g., "email").
+
+        Returns:
+            str: The response text from Google Gemini Vertex, or an empty string if there was an error.
+        """
+        return()
         try:
             if self.debug_mode:
                 logger.debug(f"Querying Google Gemini Vertex for {response_type} responses...")
@@ -186,16 +213,25 @@ class AIService:
         Load responses from a saved file.
 
         Args:
-            response_type (str): The type of response (e.g., "email").
+            response_type (str): The type of response (e.g., "smtp").
 
         Returns:
-            str: The loaded response text.
+            dict or str: The loaded response as a JSON dictionary if valid, 
+                        otherwise returns the raw text as a string.
         """
         filename = f'files/{response_type}_raw_response.txt'
         if os.path.exists(filename):
             with open(filename, 'r', encoding='utf-8') as f:
-                return f.read()
-        return "No responses available"
+                try:
+                    # Try to parse the file as JSON
+                    return json.load(f)
+                except json.JSONDecodeError:
+                    # If parsing fails, return the raw text
+                    f.seek(0)  # Reset file pointer to the beginning
+                    raw_text = f.read()
+                    logger.error(f"Failed to parse {filename} as JSON. Returning raw text.")
+                    return raw_text
+        return {}  # Return empty dictionary if no file is found
 
     def cleanup_and_parse_json(self, text):
         """
@@ -267,3 +303,127 @@ class AIService:
             if self.debug_mode:
                 logger.error(f"Error querying OpenAI for email {email_num}: {e}")
             return "No response"
+
+import logging
+
+def query_ai_service_for_responses(technology, segment, domain, anonymous_access, debug_mode, ai_service):
+    """
+    Query the AI service for SMTP and POP3 responses and sample emails.
+
+    Args:
+        technology (str): The technology used (e.g., sendmail, exchange).
+        segment (str): The segment of the industry or application.
+        domain (str): The domain name for the service.
+        anonymous_access (bool): Whether anonymous access is allowed.
+        debug_mode (bool): Whether to enable debug mode.
+        ai_service (AIService): The AI service to query (OpenAI, GCP, Azure).
+    """
+
+    # Load prompts from prompts.ini configuration file
+    prompts_config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'etc', 'prompts.ini'))
+    
+    # Initialize configparser to read prompts
+    prompts = configparser.ConfigParser()
+    prompts.read(prompts_config_file_path)
+
+    # Check if the prompts configuration file has been loaded correctly
+    if not prompts.sections():
+        raise FileNotFoundError(f"Prompts configuration file not found at {prompts_config_file_path}")
+
+    # Load prompts for the responses
+    smtp_prompt = prompts.get('Prompts', 'smtp_prompt').format(technology=technology)
+    pop3_prompt = prompts.get('Prompts', 'pop3_prompt').format(technology=technology)
+    email_prompts = [
+        prompts.get('Prompts', 'client_email_prompt').format(segment=segment, domain=domain),
+        prompts.get('Prompts', 'supplier_email_prompt').format(segment=segment, domain=domain),
+        prompts.get('Prompts', 'internal_email_prompt').format(segment=segment, domain=domain)
+    ]
+
+    # Function to log or print the data if debug mode is enabled
+    def log_debug_info(request_type, prompt, response):
+        if debug_mode:
+            logging.debug(f"Request ({request_type}): {prompt}")
+            logging.debug(f"Response ({request_type}): {response}")
+
+    # Try to get SMTP responses
+    try:
+        #if debug_mode:
+        spinner = Halo(text='Generating SMTP responses with AI service.. (1/5)')
+        spinner.start()  # Start the spinner while processing
+        smtp_raw_response = ai_service.query_responses(smtp_prompt, "smtp")
+        log_debug_info("SMTP", smtp_prompt, smtp_raw_response)  # Log or print the SMTP request and response
+        smtp_cleaned_response = ai_service.cleanup_and_parse_json(smtp_raw_response)
+        ai_service._store_responses(smtp_cleaned_response, "smtp")
+        spinner.succeed("SMTP responses generated successfully.")
+    except Exception as e:
+        spinner.fail(f"Failed to communicate with AI for SMTP responses: {e}")
+        return
+
+    # Try to get POP3 responses
+    try:
+            spinner = Halo(text='Generating POP3 responses with AI service.. (2/5)', spinner='dots')    
+            spinner.start()  # Start the spinner while processing
+            pop3_raw_response = ai_service.query_responses(pop3_prompt, "pop3")
+            log_debug_info("POP3", pop3_prompt, pop3_raw_response)  # Log the POP3 request and response
+
+            # Cleanup and parse the response
+            pop3_cleaned_response = ai_service.cleanup_and_parse_json(pop3_raw_response)
+
+            # Store the parsed response
+            ai_service._store_responses(pop3_cleaned_response, "pop3")
+
+            spinner.succeed("POP3 responses generated successfully.")  # Show success
+    except Exception as e:
+            spinner.fail(f"Failed to communicate with AI for POP3 responses: {e}")  # Show failure
+            return
+
+    # Try to get email responses
+    for i, email_prompt in enumerate(email_prompts, 1):
+        try:
+            o=i+2
+            spinner = Halo(text=f"Sending email prompt #{i} to AI service.. ({o}/5)", spinner='dots')    
+            spinner.start()
+#            if debug_mode:
+                #logging.debug(f"Sending email prompt #{i} to AI service...")
+            email_raw_response = ai_service.query_responses(email_prompt, f"email_{i}")
+            log_debug_info(f"Email {i}", email_prompt, email_raw_response)  # Log or print the email request and response
+            email_cleaned_response = ai_service.cleanup_and_parse_json(email_raw_response)
+            #ai_service.save_email_responses(email_cleaned_response, f"email_{i}")
+            spinner.succeed(f"Sample email #{i} generated successfully.")
+        except Exception as e:
+            spinner.fail(f"Failed to communicate with AI for email #{i}: {e}")
+
+def validate_azure_key(api_key, endpoint, location):
+    """
+    Validate the Azure OpenAI API key by making a simple API call.
+    If valid, returns True; otherwise, returns False.
+
+    Args:
+        api_key (str): The Azure OpenAI API key.
+        endpoint (str): The Azure OpenAI endpoint.
+        location (str): The Azure OpenAI location/region.
+
+    Returns:
+        bool: True if the API key is valid, False otherwise.
+    """
+    headers = {
+        'api-key': api_key,
+        'Content-Type': 'application/json'
+    }
+    
+    # Form the URL for the API call, using the provided endpoint
+    url = f"{endpoint}/openai/deployments?api-version=2023-05-15"
+
+    try:
+        # Send a GET request to validate the key and endpoint
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+            print("✔ API key is valid.")
+            return True
+        else:
+            print(f"✘ API key validation failed. Status Code: {response.status_code}")
+            return False
+    except Exception as e:
+        print(f"✘ An error occurred while validating the API key: {e}")
+        return False

@@ -171,20 +171,26 @@ class SMTPProtocol(LineReceiver):
         Format the loaded responses into a dictionary.
 
         Args:
-            responses (dict): The dictionary of responses from the AI service.
+            responses (dict or str): The dictionary or string of responses loaded from the AI service.
 
         Returns:
             dict: The formatted responses as a dictionary.
         """
-        is_valid = False
         formatted_responses = {}
+
+        # If the responses are already a dictionary, just return them
+        if isinstance(responses, dict):
+            return responses
+
+        # If responses are a string, attempt to parse them as JSON
         try:
             responses = json.loads(responses)
-            is_valid = True
-        except json.JSONDecodeError:
-            is_valid = False
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON: {e}")
+            return formatted_responses
 
-        if is_valid and "SMTP_Responses" in responses:
+        # Now handle the expected structure
+        if "SMTP_Responses" in responses:
             for item in responses["SMTP_Responses"]:
                 code = item.get('code')
                 message = item.get('message')
@@ -192,8 +198,8 @@ class SMTPProtocol(LineReceiver):
                     formatted_responses[f"{code}"] = f"{code} {message}"
         else:
             logger.error(f"Unexpected responses format: {responses}")
+        
         return formatted_responses
-
 
 class SMTPFactory(protocol.Factory):
     """
