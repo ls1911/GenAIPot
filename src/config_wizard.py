@@ -3,7 +3,6 @@ import shutil
 from halo import Halo
 import configparser
 from ai_services import validate_openai_key, validate_azure_key, query_ai_service_for_responses, AIService
-import requests
 
 def run_config_wizard(args, config, config_file_path):
     """Runs the configuration wizard to set up the honeypot."""
@@ -104,11 +103,54 @@ def run_config_wizard(args, config, config_file_path):
         config.set('gcp', 'model_id', gcp_model_id)
 
         # Initialize AIService for querying later
-        ai_service = AIService(api_key=gcp_key, project=gcp_project, location=gcp_location, model_id=gcp_model_id, debug_mode=args.debug)  # Removed 'provider'
+        exit ('Oh no!\nSnap!\nGoogle is charging us to develop integration with them!\nOther provider is recommended.\nIf you dont have other procider access try the offline mode!\nxoxo :-*')
 
     elif provider_choice == '4':
         provider = 'offline'
         print("Using offline mode with pre-existing configuration.")
+        
+        # Paths for the source and destination directories
+        config_src = os.path.join('var/no_ai', 'config.ini')
+        config_dst = os.path.join('etc', 'config.ini')
+        files_src = os.path.join('var/no_ai/')
+        files_dst = 'files/'
+
+        # Copy config.ini to etc/
+        if os.path.exists(config_src):
+            shutil.copyfile(config_src, config_dst)
+            print(f"Copied config.ini to {config_dst}.")
+        else:
+            print(f"Config file not found at {config_src}. Exiting.")
+            exit(1)
+
+        # Ensure the destination 'files/' directory exists
+        if not os.path.exists(files_dst):
+            os.makedirs(files_dst)
+
+        # List of files to copy
+        files_to_copy = [
+            'email1_raw_response.txt',
+            'email2_raw_response.txt',
+            'email3_raw_response.txt',
+            'pop3_raw_response.txt',
+            'pop3_responses.json',
+            'smtp_raw_response.txt',
+            'smtp_responses.json'
+        ]
+
+        # Copy the necessary files to the files/ directory
+        for file_name in files_to_copy:
+            src_file = os.path.join(files_src, file_name)
+            dst_file = os.path.join(files_dst, file_name)
+            if os.path.exists(src_file):
+                shutil.copyfile(src_file, dst_file)
+                print(f"Copied {file_name} to {dst_file}.")
+            else:
+                print(f"File {file_name} not found in {files_src}. Skipping.")
+        
+        print("Offline configuration and files copied successfully.")
+        exit()
+
     else:
         print("Invalid choice. Please run the configuration wizard again.")
         exit(1)
