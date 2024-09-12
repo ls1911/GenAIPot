@@ -49,7 +49,7 @@ prompts_config_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__
 prompts = configparser.ConfigParser()
 prompts.read(prompts_config_file_path)
 
-VERSION = "0.6.5"
+VERSION = "0.6.6"
 
 def ensure_files_directory():
     """Ensure the existence of the 'files' directory."""
