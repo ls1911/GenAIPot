@@ -3,6 +3,7 @@ import shutil
 from halo import Halo
 import configparser
 from ai_services import validate_openai_key, validate_azure_key, query_ai_service_for_responses, AIService
+import getpass
 
 def run_config_wizard(args, config, config_file_path):
     """Runs the configuration wizard to set up the honeypot."""
@@ -47,7 +48,8 @@ def run_config_wizard(args, config, config_file_path):
     
     if provider_choice == '1':
         provider = 'openai'
-        openai_key = input("Enter your OpenAI API key: ")
+        openai_key = getpass.getpass("Enter your OpenAI API key: ")  # Use getpass to hide the API key
+        #openai_key = input("Enter your OpenAI API key: ")
 
         # Validate the OpenAI key before proceeding        
         with Halo(text="Validating OpenAI API key...", spinner='dots') as spinner:
