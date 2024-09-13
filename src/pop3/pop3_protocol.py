@@ -107,16 +107,18 @@ class POP3Protocol(LineReceiver):
             "-ERR": "-ERR Default error response"
         }
 
-    def load_raw_emails(self):
+    def load_raw_emails(self):  
         emails = {}
         for i in range(1, 4):
             filename = f'files/email{i}_raw_response.txt'
             if os.path.exists(filename):
                 with open(filename, 'r') as f:
-                    emails[i] = f.read()
-                    logger.info(f"Loaded email content from {filename}")
+                    email_content = f.read()
+                    emails[i] = email_content
+                    logger.debug(f"Loaded email content from {filename}, length: {len(email_content)}")
             else:
                 logger.warning(f"Email file {filename} not found.")
+        logger.debug(f"Total emails loaded: {len(emails)}")
         return emails
 
     def handle_pop3_command(self, command):
