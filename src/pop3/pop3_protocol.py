@@ -110,7 +110,7 @@ class POP3Protocol(LineReceiver):
     def load_raw_emails(self):  
         emails = {}
         for i in range(1, 4):
-            filename = f'files/email{i}_raw_response.txt'
+            filename = f'files/email_{i}_raw_response.txt'
             if os.path.exists(filename):
                 with open(filename, 'r') as f:
                     email_content = f.read()
