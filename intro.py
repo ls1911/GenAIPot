@@ -1,35 +1,72 @@
 import shutil
 import time
-from art import text2art
-from termcolor import colored
-import pygame
 import os
-import sys
+
+try:
+    from art import text2art
+except ImportError:
+    print("The 'art' module is not installed. Install it using 'pip install art'.")
+    exit(1)
+
+try:
+    from termcolor import colored
+except ImportError:
+    print("The 'termcolor' module is not installed. Install it using 'pip install termcolor'.")
+    exit(1)
+
+try:
+    import pygame
+except ImportError:
+    print("The 'pygame' module is not installed. Install it using 'pip install pygame'.")
+    exit(1)
+
 
 def is_running_in_docker():
     """
     Checks if the application is running inside a Docker container.
     """
+    if os.path.exists('/.dockerenv'):
+        return True
     try:
         with open('/proc/1/cgroup', 'r') as f:
-            if 'docker' in f.read():
-                return True
+            return 'docker' in f.read()
     except Exception:
         return False
-    return False
+
 
 def play_music():
-    # Initialize the mixer and play the music only if not in Docker
+    """
+    Initializes the mixer and plays the music if the music file exists.
+    """
+    music_file = "var/music/ssi-intro.mp3"
+    if not os.path.exists(music_file):
+        print(f"Music file '{music_file}' not found.")
+        return
     try:
         pygame.mixer.init()
-        pygame.mixer.music.load("var/music/ssi-intro.mp3")  # Load your music file
-        pygame.mixer.music.play(-1)  # Play the music in a loop
+        pygame.mixer.music.load(music_file)
+        pygame.mixer.music.play(-1)
     except Exception as e:
         print(f"Error playing music: {e}")
 
+
+def clear_screen():
+    """
+    Clears the terminal screen in a cross-platform way.
+    """
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+
 def display_intro():
+    """
+    Displays the introductory ASCII art animation with the Nucleon logo.
+    """
     # Main text to display
-    main_text = text2art("Nucleon", font="block")
+    try:
+        main_text = text2art("Nucleon", font="block")
+    except Exception as e:
+        print(f"Error generating text art: {e}")
+        main_text = "NUCLEON"
     main_text_colored = colored(main_text, "green")  # Green for retro look
 
     # ASCII art for the bird and the computer
@@ -69,41 +106,54 @@ def display_intro():
     bird_color = "yellow"
     computer_color = "blue"
 
-    # Get the terminal width
-    terminal_width = shutil.get_terminal_size().columns
+    frame = 0
+    try:
+        while True:
+            clear_screen()
+            # Recalculate terminal width to handle resizing
+            terminal_width = shutil.get_terminal_size().columns
 
-    # Ensure there's enough room for both the main text and the animations
-    if terminal_width < 60:
-        return
+            # Ensure there's enough room for both the main text and the animations
+            if terminal_width < 60:
+                print("Terminal too small for animation.")
+                break
 
-    # Adjust positions based on terminal width
-    bird_start = terminal_width - len(bird[0])
-    computer_start = -len(computer[0])
-    text_offset = (terminal_width - len(main_text.split('\n')[0])) // 2
+            # Adjust positions based on terminal width
+            bird_start = terminal_width - len(bird[0])
+            computer_start = -len(computer[0])
+            text_offset = (terminal_width - len(main_text.split('\n')[0])) // 2
 
-    # Animation loop
-    for frame in range(terminal_width + len(bird[0])):
-        print("\033c", end="")  # Clear the screen
+            # Print the main text centered
+            print(" " * text_offset + main_text_colored)
 
-        # Print the main text centered
-        print(" " * text_offset + main_text_colored)
+            # Calculate the positions for the bird and computer
+            bird_pos = max(0, bird_start - frame)
+            computer_pos = min(terminal_width - len(computer[0]), computer_start + frame)
 
-        # Calculate the positions for the bird and computer
-        bird_pos = max(0, bird_start - frame)
-        computer_pos = min(terminal_width - len(computer[0]), computer_start + frame)
+            # Draw the bird
+            for line in bird:
+                print(f"{' ' * bird_pos}{colored(line, bird_color)}")
 
-        # Draw the bird
-        for line in bird:
-            print(f"{' ' * bird_pos}{colored(line, bird_color)}")
+            # Draw the computer
+            for line in computer:
+                print(f"{' ' * computer_pos}{colored(line, computer_color)}")
 
-        # Draw the computer
-        for line in computer:
-            print(f"{' ' * computer_pos}{colored(line, computer_color)}")
+            # Pause before the next frame
+            time.sleep(0.1)
+            frame += 1
+            # Stop the animation when the bird and computer have crossed the screen
+            if bird_pos <= 0 and computer_pos >= terminal_width - len(computer[0]):
+                break
+    except KeyboardInterrupt:
+        pass  # Exit gracefully on Ctrl+C
 
-        # Pause before the next frame
-        time.sleep(0.1)
 
 if __name__ == "__main__":
     if not is_running_in_docker():
         play_music()  # Play the intro music if not in Docker
-    display_intro()
+    try:
+        display_intro()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        pygame.mixer.quit()
