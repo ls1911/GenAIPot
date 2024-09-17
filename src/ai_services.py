@@ -219,7 +219,7 @@ class AIService:
             dict or str: The loaded response as a JSON dictionary if valid, 
                         otherwise returns the raw text as a string.
         """
-        filename = f'files/{response_type}_raw_response.txt'
+        filename = f'files/{response_type}_response.txt'
         if os.path.exists(filename):
             with open(filename, 'r', encoding='utf-8') as f:
                 try:

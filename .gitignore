@@ -3,3 +3,4 @@ __pycache__
 config.ini
 files/
 etc/config.ini
+.DS_Store
