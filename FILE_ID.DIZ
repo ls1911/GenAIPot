@@ -8,14 +8,14 @@
 ┌──────────────────────────────────────────────────────────────┐
 │                     GENAIpot AI Services Module              │
 │                                                              │
-│  v0.4.4 - 2024                                               │
+│  v0.8.1 - 2024                                               │
 │                                                              │
 │ The First AI-Based Open Source Honeypot.            	       │
 │ AI honeypot that emulates services using generative AI to    │
 │ be more stealthy.                                            │
 │                                                              │
-│ - Supports interaction with OpenAI API (GPT-4)               │
-│ - NEW: Integrated Google's Gemini API Vertex support         │
+│ - Improved SMTP responses               │
+│ - Improved POP3 class
 │ - Handles AI queries, configuration management,              │
 │   and response processing.                                   │
 │                                                              │
