@@ -14,8 +14,8 @@
 │ AI honeypot that emulates services using generative AI to    │
 │ be more stealthy.                                            │
 │                                                              │
-│ - Improved SMTP responses               │
-│ - Improved POP3 class
+│ - Improved SMTP responses                                    │
+│ - Improved POP3 class                                        |
 │ - Handles AI queries, configuration management,              │
 │   and response processing.                                   │
 │                                                              │
