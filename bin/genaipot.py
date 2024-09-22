@@ -44,7 +44,7 @@ from auth import check_credentials, hash_password
 from database import setup_database
 from config_wizard import run_config_wizard  # Import the function from the external config_wizard.py file
 
-VERSION = "0.8.1"
+VERSION = "0.9.1"
 
 def ensure_files_directory():
     """Ensure the existence of the 'files' directory."""
