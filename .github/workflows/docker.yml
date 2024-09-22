@@ -29,7 +29,7 @@ jobs:
           push: true
           tags: |
             annls/genaipot:latest
-            annls/genaipot:${{ github.event.release.tag_name }}  # Tag with the release version
+            annls/genaipot:${{ github.event.release.tag_name }}
 
       - name: Log out from Docker Hub
         run: docker logout
