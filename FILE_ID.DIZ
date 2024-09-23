@@ -8,16 +8,16 @@
 ┌──────────────────────────────────────────────────────────────┐
 │                     GENAIpot AI Services Module              │
 │                                                              │
-│  v0.8.1 - 2024                                               │
+│  v0.9.1 - 2024                                               │
 │                                                              │
 │ The First AI-Based Open Source Honeypot.            	       │
 │ AI honeypot that emulates services using generative AI to    │
 │ be more stealthy.                                            │
 │                                                              │
-│ - Improved SMTP responses                                    │
-│ - Improved POP3 class                                        |
-│ - Handles AI queries, configuration management,              │
-│   and response processing.                                   │
+│ - Improved SMTP classes structure                            │
+│                                                              |
+│                                                              |
+│                                                              |
 │                                                              │
 │ Copyright (C) 2024 Nucleon Cyber. All rights reserved.       │
 │ Distributed under the GNU General Public License v3.0        │
