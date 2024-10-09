@@ -64,16 +64,13 @@ pip install -r requirements.txt
 
 ## Windows Installation
 
-```
-
-
 ###Important! Dont forget to install Microsoft Visual C++ Build Tools from Microsoft site (https://visualstudio.microsoft.com/visual-cpp-build-tools/)
 open cmd.exe
-python3 -m venv venv
- .\venv\Scripts\activate
+```
+> python3 -m venv venv
+>  .\venv\Scripts\activate
+> python3 install_requirements.py
 (install needed deps on windows, this script will continue even if there are errors, script still under development, windows really dont like pip)
-python3 install_requirements.py
-
 ```
 Looking for better way to perform windows installation , suggestions welcome.
 
