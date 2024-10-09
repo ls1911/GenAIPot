@@ -50,7 +50,7 @@ Twisted library
 Installation Steps
 OpenAI key
 
-Installation:
+Normal Installation:
 
 ```
 git clone https://github.com/yourusername/genaipot-pop3.git
@@ -60,6 +60,19 @@ python3 -m venv venv
 source venv/bin/activate  # On Windows, use venv\Scripts\activate
 #Install the required packages:
 pip install -r requirements.txt
+```
+
+## Windows Installation
+
+```
+
+
+###Important! Dont forget to install Microsoft Visual C++ Build Tools from Microsoft site (https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+open cmd.exe
+python3 -m venv venv
+ .\venv\Scripts\activate
+
+
 ```
 
 ## Configuration
